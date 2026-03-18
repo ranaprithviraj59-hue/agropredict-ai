@@ -11,6 +11,8 @@ import Dashboard from '@/pages/Dashboard';
 import Predict from '@/pages/Predict';
 import MyFarm from '@/pages/MyFarm';
 import PredictionHistory from '@/pages/PredictionHistory';
+import ChatBot from '@/pages/ChatBot';
+import PricePredictor from '@/pages/PricePredictor';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -19,7 +21,8 @@ const AuthenticatedApp = () => {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+          <motion_placeholder />
+          <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
           <p className="text-sm text-muted-foreground font-medium">Loading CropAI...</p>
         </div>
       </div>
@@ -27,12 +30,8 @@ const AuthenticatedApp = () => {
   }
 
   if (authError) {
-    if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      navigateToLogin();
-      return null;
-    }
+    if (authError.type === 'user_not_registered') return <UserNotRegisteredError />;
+    if (authError.type === 'auth_required') { navigateToLogin(); return null; }
   }
 
   return (
@@ -42,6 +41,8 @@ const AuthenticatedApp = () => {
         <Route path="/Dashboard" element={<Dashboard />} />
         <Route path="/Predict" element={<Predict />} />
         <Route path="/MyFarm" element={<MyFarm />} />
+        <Route path="/PricePredictor" element={<PricePredictor />} />
+        <Route path="/ChatBot" element={<ChatBot />} />
         <Route path="/PredictionHistory" element={<PredictionHistory />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
@@ -59,7 +60,7 @@ function App() {
         <Toaster />
       </QueryClientProvider>
     </AuthProvider>
-  )
+  );
 }
 
-export default App
+export default App;
