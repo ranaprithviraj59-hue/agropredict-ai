@@ -5,18 +5,53 @@ import PageTransition from '@/components/shared/PageTransition';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import ReactMarkdown from 'react-markdown';
-import { Send, Bot, User, Loader2, Sparkles, RefreshCw } from 'lucide-react';
+import { Send, Bot, User, Loader2, RefreshCw, Languages } from 'lucide-react';
 
-const QUICK_PROMPTS = [
-  { label: '🌾 Best crops for clay soil', text: 'What are the best crops to grow in clay soil?' },
-  { label: '🐛 Pest control tips', text: 'How do I protect my crops from pests naturally?' },
-  { label: '💧 Save water tips', text: 'How can I save water while irrigating my farm?' },
-  { label: '🌱 Improve soil health', text: 'How can I improve my soil health organically?' },
-  { label: '💰 Profitable crops 2025', text: 'Which crops are most profitable to grow in 2025?' },
-  { label: '🌦️ Monsoon farming tips', text: 'Give me tips for farming during monsoon season.' },
+const LANGUAGES = [
+  { code: 'en', label: 'English', flag: '🇬🇧' },
+  { code: 'hi', label: 'हिंदी', flag: '🇮🇳' },
+  { code: 'gu', label: 'ગુજરાતી', flag: '🌾' },
 ];
+
+const QUICK_PROMPTS = {
+  en: [
+    { label: '🌾 Best crops for clay soil', text: 'What are the best crops to grow in clay soil?' },
+    { label: '🐛 Pest control tips', text: 'How do I protect my crops from pests naturally?' },
+    { label: '💧 Save water tips', text: 'How can I save water while irrigating my farm?' },
+    { label: '🌱 Improve soil health', text: 'How can I improve my soil health organically?' },
+    { label: '💰 Profitable crops 2025', text: 'Which crops are most profitable to grow in 2025?' },
+    { label: '🌦️ Monsoon farming tips', text: 'Give me tips for farming during monsoon season.' },
+  ],
+  hi: [
+    { label: '🌾 मिट्टी के लिए सबसे अच्छी फसल', text: 'मिट्टी के लिए सबसे अच्छी फसलें कौन सी हैं? हिंदी में बताएं।' },
+    { label: '🐛 कीट नियंत्रण', text: 'फसलों को कीड़ों से बचाने के प्राकृतिक तरीके क्या हैं? हिंदी में बताएं।' },
+    { label: '💧 पानी बचाने के टिप्स', text: 'खेत में सिंचाई करते समय पानी कैसे बचाएं? हिंदी में बताएं।' },
+    { label: '🌱 मिट्टी की सेहत सुधारें', text: 'जैविक तरीके से मिट्टी की सेहत कैसे सुधारें? हिंदी में बताएं।' },
+    { label: '💰 लाभदायक फसलें 2025', text: '2025 में कौन सी फसलें सबसे ज्यादा फायदेमंद हैं? हिंदी में बताएं।' },
+    { label: '🌦️ मानसून खेती', text: 'मानसून के मौसम में खेती के टिप्स दें। हिंदी में बताएं।' },
+  ],
+  gu: [
+    { label: '🌾 માટી માટે શ્રેષ્ઠ પાક', text: 'ચીકણી માટી માટે શ્રેષ્ઠ પાક કયા છે? ગુજરાતીમાં જવાબ આપો.' },
+    { label: '🐛 જંતુ નિયંત્રણ', text: 'કુદરતી રીતે પાકને જીવાતથી કેવી રીતે બચાવવો? ગુજરાતીમાં જવાબ આપો.' },
+    { label: '💧 પાણી બચાવવાના સૂચનો', text: 'ખેતરમાં સિંચાઈ કરતી વખતે પાણી કેવી રીતે બચાવવું? ગુજરાતીમાં જવાબ આપો.' },
+    { label: '🌱 જમીનની તંદુરસ્તી', text: 'જૈવિક રીતે જમીનની તંદુરસ્તી કેવી રીતે સુધારવી? ગુજરાતીમાં જવાબ આપો.' },
+    { label: '💰 નફાકારક પાક 2025', text: '2025 માં સૌથી વધુ નફાકારક પાક કયા છે? ગુજરાતીમાં જવાબ આપો.' },
+    { label: '🌦️ ચોમાસુ ખેતી', text: 'ચોમાસાની ઋતુમાં ખેતીની ટીપ્સ આપો. ગુજરાતીમાં જવાბ આપો.' },
+  ],
+};
+
+const WELCOME_MESSAGES = {
+  en: "🌾 **Namaste! I'm Kisan AI** — your personal farming assistant!\n\nI can help you with:\n- 🌱 Crop selection & planning\n- 🐛 Pest & disease control\n- 💧 Irrigation & water management\n- 🌿 Soil health improvement\n- 💰 Crop pricing & market trends\n- 🌦️ Season-specific farming tips\n\nWhat farming challenge can I help you with today?",
+  hi: "🌾 **नमस्ते! मैं किसान AI हूँ** — आपका व्यक्तिगत खेती सहायक!\n\nमैं इन विषयों में आपकी मदद कर सकता हूँ:\n- 🌱 फसल चयन और योजना\n- 🐛 कीट और रोग नियंत्रण\n- 💧 सिंचाई और जल प्रबंधन\n- 🌿 मिट्टी स्वास्थ्य सुधार\n- 💰 फसल मूल्य और बाजार रुझान\n- 🌦️ मौसम के अनुसार खेती के टिप्स\n\nआज मैं आपकी किस खेती समस्या में मदद कर सकता हूँ?",
+  gu: "🌾 **નમસ્તે! હું કિસાન AI છું** — તમારો વ્યક્તિગત ખેતી સહાયક!\n\nહું આ વિષયોમાં મદદ કરી શકું છું:\n- 🌱 પાક પસંદગી અને આયોજન\n- 🐛 જંતુ અને રોગ નિયંત્રણ\n- 💧 સિંચાઈ અને જળ વ્યવસ્થાપન\n- 🌿 જમીન સ્વાસ્થ્ય સુધારો\n- 💰 પાક ભાવ અને બજાર વલણ\n- 🌦️ ઋતુ આધારિત ખેતી ટીપ્સ\n\nઆજે હું તમારી કઈ ખેતી સમસ્યામાં મદદ કરી શકું?",
+};
+
+const PLACEHOLDERS = {
+  en: 'Ask about crops, soil, pests, weather...',
+  hi: 'फसल, मिट्टी, कीट, मौसम के बारे में पूछें...',
+  gu: 'પાક, માટી, જંતુ, હવામાન વિશે પૂછો...',
+};
 
 function MessageBubble({ message, index }) {
   const isUser = message.role === 'user';
@@ -90,6 +125,7 @@ function TypingIndicator() {
 }
 
 export default function ChatBot() {
+  const [lang, setLang] = useState('en');
   const [conversation, setConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -98,31 +134,25 @@ export default function ChatBot() {
   const bottomRef = useRef(null);
 
   useEffect(() => {
-    initConversation();
+    initConversation(lang);
   }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  const initConversation = async () => {
+  const initConversation = async (selectedLang) => {
     const conv = await base44.agents.createConversation({
       agent_name: 'farming_assistant',
       metadata: { name: 'Kisan AI Chat' },
     });
     setConversation(conv);
-    setMessages([{
-      role: 'assistant',
-      content: "🌾 **Namaste! I'm Kisan AI** — your personal farming assistant!\n\nI can help you with:\n- 🌱 Crop selection & planning\n- 🐛 Pest & disease control\n- 💧 Irrigation & water management\n- 🌿 Soil health improvement\n- 💰 Crop pricing & market trends\n- 🌦️ Season-specific farming tips\n\nWhat farming challenge can I help you with today?",
-    }]);
+    setMessages([{ role: 'assistant', content: WELCOME_MESSAGES[selectedLang] }]);
 
     base44.agents.subscribeToConversation(conv.id, (data) => {
       const msgs = data.messages || [];
       setMessages([
-        {
-          role: 'assistant',
-          content: "🌾 **Namaste! I'm Kisan AI** — your personal farming assistant!\n\nI can help you with:\n- 🌱 Crop selection & planning\n- 🐛 Pest & disease control\n- 💧 Irrigation & water management\n- 🌿 Soil health improvement\n- 💰 Crop pricing & market trends\n- 🌦️ Season-specific farming tips\n\nWhat farming challenge can I help you with today?",
-        },
+        { role: 'assistant', content: WELCOME_MESSAGES[selectedLang] },
         ...msgs,
       ]);
       setIsTyping(false);
@@ -130,21 +160,37 @@ export default function ChatBot() {
     });
   };
 
+  const handleLangChange = async (newLang) => {
+    setLang(newLang);
+    setMessages([]);
+    setConversation(null);
+    setInput('');
+    await initConversation(newLang);
+  };
+
   const sendMessage = async (text) => {
     const msg = text || input.trim();
     if (!msg || isLoading || !conversation) return;
+    // Append language instruction so AI responds in chosen language
+    const langInstruction = lang === 'hi'
+      ? ' (कृपया हिंदी में जवाब दें)'
+      : lang === 'gu'
+      ? ' (કૃપા કરીને ગુજરાતીમાં જવાબ આપો)'
+      : '';
     setInput('');
     setIsLoading(true);
     setIsTyping(true);
     setMessages((prev) => [...prev, { role: 'user', content: msg }]);
-    await base44.agents.addMessage(conversation, { role: 'user', content: msg });
+    await base44.agents.addMessage(conversation, { role: 'user', content: msg + langInstruction });
   };
 
   const resetChat = async () => {
     setMessages([]);
     setConversation(null);
-    await initConversation();
+    await initConversation(lang);
   };
+
+  const currentLang = LANGUAGES.find((l) => l.code === lang);
 
   return (
     <PageTransition>
@@ -153,7 +199,7 @@ export default function ChatBot() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-4 flex items-center justify-between"
+          className="mb-4 flex items-center justify-between gap-3 flex-wrap"
         >
           <div className="flex items-center gap-3">
             <motion.div
@@ -175,19 +221,42 @@ export default function ChatBot() {
               </div>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={resetChat} className="rounded-full">
-            <RefreshCw className="w-4 h-4" />
-          </Button>
+
+          {/* Language selector + reset */}
+          <div className="flex items-center gap-2">
+            <Languages className="w-4 h-4 text-muted-foreground" />
+            <div className="flex rounded-xl border border-border overflow-hidden bg-card">
+              {LANGUAGES.map((l) => (
+                <motion.button
+                  key={l.code}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => handleLangChange(l.code)}
+                  className={`px-3 py-1.5 text-xs font-medium transition-all duration-200 flex items-center gap-1 ${
+                    lang === l.code
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                  }`}
+                >
+                  <span>{l.flag}</span>
+                  <span>{l.label}</span>
+                </motion.button>
+              ))}
+            </div>
+            <Button variant="ghost" size="icon" onClick={resetChat} className="rounded-full h-8 w-8">
+              <RefreshCw className="w-3.5 h-3.5" />
+            </Button>
+          </div>
         </motion.div>
 
         {/* Quick prompts */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
+          key={lang}
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
           className="flex gap-2 flex-wrap mb-4"
         >
-          {QUICK_PROMPTS.map((q) => (
+          {QUICK_PROMPTS[lang].map((q) => (
             <motion.button
               key={q.label}
               whileHover={{ scale: 1.03, y: -1 }}
@@ -203,9 +272,11 @@ export default function ChatBot() {
 
         {/* Messages */}
         <Card className="flex-1 overflow-y-auto p-4 space-y-4 border-border/50 bg-card/60 backdrop-blur-sm">
-          {messages.map((msg, i) => (
-            <MessageBubble key={i} message={msg} index={i} />
-          ))}
+          <AnimatePresence mode="wait">
+            {messages.map((msg, i) => (
+              <MessageBubble key={`${lang}-${i}`} message={msg} index={i} />
+            ))}
+          </AnimatePresence>
           <AnimatePresence>
             {isTyping && <TypingIndicator />}
           </AnimatePresence>
@@ -223,7 +294,7 @@ export default function ChatBot() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-            placeholder="Ask about crops, soil, pests, weather..."
+            placeholder={PLACEHOLDERS[lang]}
             className="flex-1 h-12 rounded-xl border-border/60 bg-card"
             disabled={isLoading}
           />
