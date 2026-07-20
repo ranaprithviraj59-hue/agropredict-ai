@@ -8,7 +8,28 @@ import { createServer } from '../index.js';
 async function withTestServer(fn) {
   const dir = await mkdtemp(join(tmpdir(), 'agropredict-'));
   const dbPath = join(dir, 'test.db');
-  const app = createServer({ dbPath });
+  const app = createServer({
+    dbPath,
+    liveServices: {
+      getWeatherForFarm: async () => ({
+        source: 'Open-Meteo',
+        temperature_c: 31,
+        precipitation_mm: 8,
+        humidity_percent: 70,
+        fetched_at: '2026-07-20T00:00:00.000Z',
+      }),
+      getLiveMandiPrice: async () => ({
+        modal_price: 3100,
+        min_price: 2950,
+        max_price: 3300,
+        market: 'Surat',
+        state: 'Gujarat',
+        district: 'Surat',
+        arrival_date: '20/07/2026',
+        source_url: 'https://api.data.gov.in/resource/demo',
+      }),
+    },
+  });
   await new Promise((resolve) => app.listen(0, '127.0.0.1', resolve));
   const { port } = app.address();
   const baseUrl = `http://127.0.0.1:${port}`;
@@ -72,14 +93,26 @@ test('API supports farms, crop prediction, price prediction, chat, and admin sum
 
     assert.equal(prediction.response.status, 201);
     assert.equal(prediction.body.predictions[0].crop_name, 'Rice');
+    assert.equal(prediction.body.weather_context.source, 'Open-Meteo');
+    assert.ok(prediction.body.recommendation_notes.includes('live weather'));
 
     const price = await json(`${baseUrl}/api/predictions/price`, {
       method: 'POST',
-      body: JSON.stringify({ crop: 'Rice', market: 'National Market', season: 'Kharif', quantity: 20 }),
+      body: JSON.stringify({
+        crop: 'Rice',
+        market: 'National Market',
+        season: 'Kharif',
+        quantity: 20,
+        state: 'Gujarat',
+        district: 'Surat',
+      }),
     });
 
     assert.equal(price.response.status, 201);
     assert.equal(price.body.total_revenue, price.body.current_price * 20);
+    assert.equal(price.body.current_price, 3100);
+    assert.equal(price.body.predicted_price_per_quintal, 3100);
+    assert.equal(price.body.data_source.type, 'live_mandi');
 
     const chat = await json(`${baseUrl}/api/chat`, {
       method: 'POST',
@@ -88,6 +121,19 @@ test('API supports farms, crop prediction, price prediction, chat, and admin sum
 
     assert.equal(chat.response.status, 201);
     assert.ok(chat.body.answer.toLowerCase().includes('drip') || chat.body.answer.toLowerCase().includes('water'));
+    assert.ok(chat.body.conversation_id);
+    assert.ok(chat.body.provider);
+
+    const conversations = await json(`${baseUrl}/api/chat/conversations`);
+    assert.equal(conversations.response.status, 200);
+    assert.equal(conversations.body.length, 1);
+    assert.equal(conversations.body[0].id, chat.body.conversation_id);
+
+    const history = await json(`${baseUrl}/api/chat/history/${chat.body.conversation_id}`);
+    assert.equal(history.response.status, 200);
+    assert.equal(history.body.length, 2);
+    assert.deepEqual(history.body.map((message) => message.role), ['user', 'assistant']);
+    assert.ok(history.body[1].content.toLowerCase().includes('drip') || history.body[1].content.toLowerCase().includes('water'));
 
     const blockedAdmin = await json(`${baseUrl}/api/admin/summary`);
     assert.equal(blockedAdmin.response.status, 401);

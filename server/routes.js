@@ -2,8 +2,7 @@ import { getCropKnowledge, json, rowToChatLog, rowToCropPrediction, rowToFarm, r
 import { locationKnowledge } from './data/locationKnowledge.js';
 import { predictCrops } from './services/cropEngine.js';
 import { predictPrice } from './services/priceEngine.js';
-import { fetchOpenRouterAIResponse } from './services/openrouterService.js';
-import { generateDynamicKisanAnswer } from './services/aiEngine.js';
+import { generateKisanAiResponse } from './services/kisanAiService.js';
 
 const send = (res, status, body) => {
   res.writeHead(status, {
@@ -27,11 +26,28 @@ const adminKey = () => process.env.ADMIN_KEY || 'admin123';
 
 const isAdminRequest = (req) => req.headers['x-admin-key'] === adminKey();
 
-const createChatAnswer = (message, language = 'en') => {
-  return generateDynamicKisanAnswer(message, language);
+const chatTitle = (message) => String(message || 'Kisan AI Chat').trim().slice(0, 70) || 'Kisan AI Chat';
+
+const getChatHistory = (db, conversationId) => {
+  if (!conversationId) return [];
+  const rows = db.prepare('SELECT message, answer FROM chat_logs WHERE conversation_id = ? ORDER BY created_date ASC, id ASC').all(conversationId);
+  return rows.flatMap((row) => [
+    { role: 'user', content: row.message },
+    { role: 'assistant', content: row.answer },
+  ]);
 };
 
-export async function handleApi(req, res, db) {
+const ensureConversation = (db, { conversationId, message, language }) => {
+  if (conversationId) {
+    const existing = db.prepare('SELECT id FROM chat_conversations WHERE id = ?').get(conversationId);
+    if (existing) return Number(existing.id);
+  }
+
+  const created = db.prepare('INSERT INTO chat_conversations (title, language) VALUES (?, ?)').run(chatTitle(message), language || 'en');
+  return Number(created.lastInsertRowid);
+};
+
+export async function handleApi(req, res, db, liveServices = {}) {
   if (req.method === 'OPTIONS') return send(res, 204, {});
 
   const url = new URL(req.url, 'http://localhost');
@@ -122,11 +138,23 @@ export async function handleApi(req, res, db) {
       const body = await readBody(req);
       const farm = rowToFarm(db.prepare('SELECT * FROM farms WHERE id = ?').get(body.farm_id));
       if (!farm) return send(res, 404, { error: 'Farm not found' });
-      const result = predictCrops(farm, body.season, getCropKnowledge(db));
+      let weather = null;
+      try {
+        weather = await liveServices.getWeatherForFarm?.(farm);
+      } catch (error) {
+        console.warn(`Live weather unavailable: ${error.message}`);
+      }
+      const result = predictCrops(farm, body.season, getCropKnowledge(db), weather);
       const saved = db.prepare(`
         INSERT INTO crop_predictions (farm_id, season, predictions_json, recommendation_notes, weather_summary)
         VALUES (?, ?, ?, ?, ?)
-      `).run(farm.id, body.season, json(result.predictions), result.recommendation_notes, 'Local climate profile based on farm data');
+      `).run(
+        farm.id,
+        body.season,
+        json(result.predictions),
+        result.recommendation_notes,
+        weather ? json(weather) : 'Local climate profile based on farm data'
+      );
       return send(res, 201, {
         id: Number(saved.lastInsertRowid),
         farm_id: farm.id,
@@ -150,7 +178,13 @@ export async function handleApi(req, res, db) {
       const body = await readBody(req);
       const missing = required(body, ['crop', 'market', 'season']);
       if (missing.length) return send(res, 400, { error: `Missing required fields: ${missing.join(', ')}` });
-      const result = predictPrice(body);
+      let liveMarket = null;
+      try {
+        liveMarket = await liveServices.getLiveMandiPrice?.(body);
+      } catch (error) {
+        console.warn(`Live mandi price unavailable: ${error.message}`);
+      }
+      const result = predictPrice({ ...body, liveMarket });
       const saved = db.prepare(`
         INSERT INTO price_predictions (crop, market, season, quantity, result_json)
         VALUES (?, ?, ?, ?, ?)
@@ -162,13 +196,54 @@ export async function handleApi(req, res, db) {
       const body = await readBody(req);
       if (!body.message) return send(res, 400, { error: 'Message is required' });
 
-      let answer = await fetchOpenRouterAIResponse(body.message, body.language);
-      if (!answer) {
-        answer = createChatAnswer(body.message, body.language);
-      }
+      const conversationId = ensureConversation(db, {
+        conversationId: body.conversation_id,
+        message: body.message,
+        language: body.language,
+      });
+      const history = getChatHistory(db, conversationId);
+      const aiResult = await generateKisanAiResponse({
+        message: body.message,
+        language: body.language || 'en',
+        history,
+      });
+      const answer = aiResult.answer;
 
-      const saved = db.prepare('INSERT INTO chat_logs (language, message, answer) VALUES (?, ?, ?)').run(body.language || 'en', body.message, answer);
-      return send(res, 201, { id: Number(saved.lastInsertRowid), answer });
+      const saved = db.prepare(`
+        INSERT INTO chat_logs (conversation_id, language, message, answer, provider, model)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(conversationId, body.language || 'en', body.message, answer, aiResult.provider, aiResult.model);
+      db.prepare('UPDATE chat_conversations SET updated_date = CURRENT_TIMESTAMP WHERE id = ?').run(conversationId);
+
+      return send(res, 201, {
+        id: Number(saved.lastInsertRowid),
+        conversation_id: conversationId,
+        answer,
+        provider: aiResult.provider,
+        model: aiResult.model,
+      });
+    }
+
+    if (path === '/api/chat/conversations' && req.method === 'GET') {
+      const language = url.searchParams.get('language');
+      const rows = db.prepare(`
+        SELECT c.id, c.title, c.language, c.created_date, c.updated_date, COUNT(l.id) AS message_count
+        FROM chat_conversations c
+        LEFT JOIN chat_logs l ON l.conversation_id = c.id
+        ${language ? 'WHERE c.language = ?' : ''}
+        GROUP BY c.id
+        ORDER BY c.updated_date DESC, c.id DESC
+      `).all(...(language ? [language] : []));
+      return send(res, 200, rows.map((row) => ({
+        ...row,
+        id: Number(row.id),
+        message_count: Number(row.message_count || 0) * 2,
+      })));
+    }
+
+    const chatHistoryMatch = path.match(/^\/api\/chat\/history\/(\d+)$/);
+    if (chatHistoryMatch && req.method === 'GET') {
+      return send(res, 200, getChatHistory(db, Number(chatHistoryMatch[1])));
     }
 
     if (path === '/api/admin/summary' && req.method === 'GET') {

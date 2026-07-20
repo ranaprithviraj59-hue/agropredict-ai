@@ -1,26 +1,31 @@
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
+import { buildKisanSystemPrompt, getLanguageInstruction } from './kisanPrompt.js';
 
-export async function fetchOpenRouterAIResponse(message, language = 'en') {
-  const langInstruction = 
-    language === 'hi' ? 'Please provide your full answer in Hindi (हिंदी).' :
-    language === 'gu' ? 'Please provide your full answer in Gujarati (ગુજરાતી).' :
-    'Please provide your answer in clear, friendly English.';
-
-  const systemPrompt = `You are Kisan AI (किसान AI / કિસાન AI), an advanced AI farming assistant specializing in Indian agriculture, crop recommendations, soil health (NPK, pH), irrigation, pest control, weather impact, and mandi pricing. Answer practical farming queries accurately, concisely, and supportively. ${langInstruction}`;
+export async function fetchOpenRouterAIResponse({
+  message,
+  language = 'en',
+  history = [],
+  apiKey = process.env.OPENROUTER_API_KEY || '',
+  preferredModel = process.env.OPENROUTER_MODEL || 'openrouter/auto',
+  fetchImpl = fetch,
+} = {}) {
+  const token = String(apiKey || '').trim();
+  if (!token) return null;
 
   const modelsToTry = [
-    'deepseek/deepseek-chat',
+    preferredModel,
+    'openrouter/auto',
+    'google/gemini-2.0-flash-001',
+    'deepseek/deepseek-chat-v3-0324',
     'google/gemini-2.0-flash-lite-001',
-    'meta-llama/llama-3.3-70b-instruct',
-    'mistralai/mistral-7b-instruct'
-  ];
+    'meta-llama/llama-3.3-70b-instruct'
+  ].filter((model, index, models) => model && models.indexOf(model) === index);
 
   for (const model of modelsToTry) {
     try {
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      const response = await fetchImpl('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY.trim()}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': 'http://localhost:5173',
           'X-Title': 'CropAI Kisan Assistant',
@@ -28,11 +33,13 @@ export async function fetchOpenRouterAIResponse(message, language = 'en') {
         body: JSON.stringify({
           model: model,
           messages: [
-            { role: 'system', content: systemPrompt },
+            { role: 'system', content: buildKisanSystemPrompt(language) },
+            { role: 'system', content: getLanguageInstruction(language) },
+            ...history.slice(-8),
             { role: 'user', content: message }
           ],
-          temperature: 0.7,
-          max_tokens: 1000,
+          temperature: 0.45,
+          max_tokens: 1100,
         }),
       });
 
@@ -40,7 +47,11 @@ export async function fetchOpenRouterAIResponse(message, language = 'en') {
         const data = await response.json();
         const content = data.choices?.[0]?.message?.content;
         if (content && content.trim().length > 0) {
-          return content.trim();
+          return {
+            answer: content.trim(),
+            provider: 'openrouter',
+            model: data.model || model,
+          };
         }
       }
     } catch (err) {

@@ -110,16 +110,19 @@ export default function ChatBot() {
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [lang, setLang] = useState('en');
+  const [conversationId, setConversationId] = useState(null);
+  const [aiSource, setAiSource] = useState('local_knowledge');
   const bottomRef = useRef(null);
 
   const initConversation = async (language = 'en') => {
     try {
-      const convs = await agroApi.chat.conversations();
+      const convs = await agroApi.chat.conversations(language);
       if (convs && convs.length > 0) {
         const latest = convs[0];
         const history = await agroApi.chat.history(latest.id);
         if (history && history.length > 0) {
           setMessages(history);
+          setConversationId(latest.id);
           return;
         }
       }
@@ -128,6 +131,7 @@ export default function ChatBot() {
     }
 
     setMessages([{ role: 'assistant', content: WELCOME_MESSAGES[language] }]);
+    setConversationId(null);
   };
 
   useEffect(() => {
@@ -140,9 +144,9 @@ export default function ChatBot() {
 
   const handleLangChange = (newLang) => {
     setLang(newLang);
-    if (messages.length <= 1) {
-      setMessages([{ role: 'assistant', content: WELCOME_MESSAGES[newLang] }]);
-    }
+    setConversationId(null);
+    setMessages([{ role: 'assistant', content: WELCOME_MESSAGES[newLang] }]);
+    initConversation(newLang);
   };
 
   const sendMessage = async (overrideText) => {
@@ -159,9 +163,12 @@ export default function ChatBot() {
       const response = await agroApi.chat.sendMessage({
         message: textToSend,
         language: lang,
+        conversation_id: conversationId,
       });
 
       setIsTyping(false);
+      if (response.conversation_id) setConversationId(response.conversation_id);
+      if (response.provider) setAiSource(response.provider);
       const assistantMsg = {
         role: 'assistant',
         content: response.answer || response.response || response.message || 'I am ready to help you with your farm!',
@@ -180,7 +187,13 @@ export default function ChatBot() {
 
   const resetChat = async () => {
     setMessages([]);
+    setConversationId(null);
     await initConversation(lang);
+  };
+
+  const startNewChat = () => {
+    setConversationId(null);
+    setMessages([{ role: 'assistant', content: WELCOME_MESSAGES[lang] }]);
   };
 
   return (
@@ -201,7 +214,7 @@ export default function ChatBot() {
               <div className="flex items-center gap-2">
                 <h1 className="font-heading text-2xl font-extrabold text-white">Kisan AI Assistant</h1>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-amber-400" /> ONLINE
+                  <Sparkles className="w-3 h-3 text-amber-400" /> {aiSource === 'local_knowledge' ? 'LOCAL' : aiSource.toUpperCase()}
                 </span>
               </div>
               <p className="text-xs text-slate-300">Ask any crop, soil, weather or market pricing question</p>
@@ -229,6 +242,9 @@ export default function ChatBot() {
             </div>
             <Button variant="ghost" size="icon" onClick={resetChat} className="rounded-xl h-9 w-9 text-slate-300 hover:bg-slate-800 hover:text-white">
               <RefreshCw className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" onClick={startNewChat} className="rounded-xl h-9 px-3 text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white">
+              New
             </Button>
           </div>
         </motion.div>

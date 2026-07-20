@@ -8,7 +8,7 @@ import SeasonSelector from '@/components/predict/SeasonSelector';
 import CropResultCard from '@/components/predict/CropResultCard';
 import PredictionLoader from '@/components/predict/PredictionLoader';
 import { Button } from '@/components/ui/button';
-import { Sparkles, RotateCcw, Save, ShieldCheck } from 'lucide-react';
+import { CloudSun, Sparkles, RotateCcw, Save, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Predict() {
@@ -136,6 +136,24 @@ export default function Predict() {
                   <p className="text-xs sm:text-sm text-slate-100 leading-relaxed font-medium">
                     {results.recommendation_notes}
                   </p>
+                </motion.div>
+              )}
+
+              {results.weather_context && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-slate-900/90 rounded-2xl p-5 border border-sky-400/30 flex items-start gap-3.5 shadow-xl"
+                >
+                  <CloudSun className="w-6 h-6 text-sky-300 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="text-sm font-extrabold text-white">Live Weather Used</h3>
+                    <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium mt-1">
+                      {results.weather_context.location_name || results.weather_context.source}: {results.weather_context.temperature_c ?? 'n/a'} C,
+                      {' '}{results.weather_context.precipitation_mm ?? 'n/a'} mm rain,
+                      {' '}{results.weather_context.humidity_percent ?? 'n/a'}% humidity
+                    </p>
+                  </div>
                 </motion.div>
               )}
 

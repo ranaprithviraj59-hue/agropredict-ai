@@ -6,8 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import { Save, X, Navigation, Sparkles, Thermometer, Droplets, CloudRain, FlaskConical } from 'lucide-react';
+import { Save, X, Navigation, Thermometer, Droplets, CloudRain, FlaskConical } from 'lucide-react';
 import { toast } from 'sonner';
 
 const SOIL_TYPES = ['clay', 'sandy', 'loamy', 'silty', 'peaty', 'chalky', 'laterite', 'black_cotton', 'red_soil', 'alluvial'];

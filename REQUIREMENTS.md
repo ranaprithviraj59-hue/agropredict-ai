@@ -82,6 +82,54 @@ $env:ADMIN_KEY="your_key_here"
 npm run dev
 ```
 
+## Live Data Setup
+
+Live weather works automatically when a farm has latitude and longitude.
+If latitude and longitude are missing, the backend uses the farm city, district, and state to find coordinates first.
+Coordinates are still more accurate than text lookup, especially for villages with duplicate names.
+
+Weather source:
+
+```text
+Open-Meteo Forecast + Geocoding APIs
+```
+
+Live mandi prices use the public data.gov.in sample key by default for testing.
+The sample key is rate-limited and returns a maximum of 10 records.
+
+For better limits, use your own data.gov.in API key:
+
+```powershell
+$env:DATA_GOV_API_KEY="your_data_gov_api_key"
+npm run dev
+```
+
+If the API returns no matching mandi record, the Price Predictor still runs and the result is marked as a fallback estimate.
+
+## Kisan AI Setup
+
+The assistant works without keys using the local agriculture knowledge engine.
+For stronger live AI answers, use one of these:
+
+```powershell
+$env:OPENROUTER_API_KEY="your_openrouter_key"
+npm run dev
+```
+
+Or use Hugging Face Inference Providers:
+
+```powershell
+$env:HF_TOKEN="your_hugging_face_token"
+$env:HUGGINGFACE_MODEL="openai/gpt-oss-120b:fastest"
+npm run dev
+```
+
+Recommended order for this project:
+
+```text
+OpenRouter for easiest multi-model fallback, Hugging Face for open-model presentation value, local engine for offline demo.
+```
+
 ## Database
 
 The SQLite database is created automatically here:

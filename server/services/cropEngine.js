@@ -33,7 +33,25 @@ const seasonScore = (season, cropSeasons) => {
   return 2;
 };
 
-export function predictCrops(farm, season, cropKnowledge) {
+const weatherScore = (weather, crop) => {
+  if (!weather) return 0;
+  const temperature = Number(weather.temperature_c);
+  const rain = Number(weather.precipitation_mm);
+  const humidity = Number(weather.humidity_percent);
+
+  if (Number.isFinite(temperature) && temperature >= 39 && Number.isFinite(rain) && rain <= 1) {
+    return crop.water.includes('scarce') ? 3 : crop.water.includes('moderate') ? 1 : 0;
+  }
+  if (Number.isFinite(rain) && rain >= 8) {
+    return crop.water.includes('abundant') ? 2 : crop.water.includes('moderate') ? 1 : 0;
+  }
+  if (Number.isFinite(humidity) && humidity >= 75) {
+    return crop.climates.includes('tropical') ? 2 : 1;
+  }
+  return 1;
+};
+
+export function predictCrops(farm, season, cropKnowledge, weather = null) {
   const soil = normalize(farm.soil_type);
   const climate = normalize(farm.climate_zone);
   const irrigation = normalize(farm.irrigation_type || farm.water_source);
@@ -54,6 +72,7 @@ export function predictCrops(farm, season, cropKnowledge) {
         : (region.includes('coastal') || region === 'humid') && crop.water.includes('abundant')
           ? 4
           : 2,
+      weather: weatherScore(weather, crop),
     };
 
     const total = Object.values(breakdown).reduce((sum, value) => sum + value, 0);
@@ -73,6 +92,16 @@ export function predictCrops(farm, season, cropKnowledge) {
     if (breakdown.ph >= 14) reasons.push(`Soil pH is within the preferred range ${crop.ph[0]}-${crop.ph[1]}.`);
     else risks.push(`Adjust soil pH toward ${crop.ph[0]}-${crop.ph[1]} for better nutrient uptake.`);
 
+    if (weather) {
+      if (breakdown.weather >= 2) reasons.push('Live weather currently supports this crop profile.');
+      if (Number(weather.temperature_c) >= 39 && Number(weather.precipitation_mm) <= 1 && !crop.water.includes('scarce')) {
+        risks.push('Live weather is hot and dry, so irrigation planning is important before sowing.');
+      }
+      if (Number(weather.precipitation_mm) >= 8 && crop.water.includes('scarce')) {
+        risks.push('Live rainfall is high for a low-water crop; watch drainage and disease pressure.');
+      }
+    }
+
     return {
       crop_name: crop.crop_name,
       success_probability: probability,
@@ -91,8 +120,12 @@ export function predictCrops(farm, season, cropKnowledge) {
   }).sort((a, b) => b.success_probability - a.success_probability);
 
   const top = predictions[0];
+  const weatherNote = weather
+    ? ` It also includes live weather from ${weather.source || 'weather API'}: ${weather.temperature_c ?? 'n/a'} C, ${weather.precipitation_mm ?? 'n/a'} mm rain.`
+    : '';
   return {
     predictions,
-    recommendation_notes: `${top.crop_name} is the best current match with ${top.success_probability}% suitability. The score considers soil, season, water, pH, climate, irrigation, rotation, and region.`,
+    weather_context: weather,
+    recommendation_notes: `${top.crop_name} is the best current match with ${top.success_probability}% suitability. The score considers soil, season, water, pH, climate, irrigation, rotation, region, and live weather when available.${weatherNote}`,
   };
 }

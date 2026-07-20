@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Thermometer, Droplets, Activity, Layers, Sun, Wind,
+  Thermometer, Droplets, Activity, Layers, Sun,
   CheckCircle2, Sparkles, MoveHorizontal, ShieldCheck, Gauge, Zap
 } from 'lucide-react';
 

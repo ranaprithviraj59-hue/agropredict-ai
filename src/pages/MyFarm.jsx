@@ -6,7 +6,7 @@ import PageTransition from '@/components/shared/PageTransition';
 import FarmForm from '@/components/farm/FarmForm';
 import FarmCard from '@/components/farm/FarmCard';
 import { Button } from '@/components/ui/button';
-import { Plus, Sprout, MapPin, Sparkles } from 'lucide-react';
+import { Plus, Sprout, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function MyFarm() {

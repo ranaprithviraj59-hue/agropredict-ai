@@ -70,10 +70,21 @@ export function createDatabase(dbPath = 'server/data/agropredict.db') {
 
     CREATE TABLE IF NOT EXISTS chat_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      conversation_id INTEGER,
       language TEXT,
       message TEXT NOT NULL,
       answer TEXT NOT NULL,
+      provider TEXT,
+      model TEXT,
       created_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS chat_conversations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      language TEXT,
+      created_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS crop_knowledge (
@@ -91,6 +102,16 @@ export function createDatabase(dbPath = 'server/data/agropredict.db') {
   ];
   for (const [name, type] of extraCols) {
     if (!farmColumns.includes(name)) db.exec(`ALTER TABLE farms ADD COLUMN ${name} ${type}`);
+  }
+
+  const chatColumns = db.prepare('PRAGMA table_info(chat_logs)').all().map((column) => column.name);
+  const chatExtraCols = [
+    ['conversation_id', 'INTEGER'],
+    ['provider', 'TEXT'],
+    ['model', 'TEXT'],
+  ];
+  for (const [name, type] of chatExtraCols) {
+    if (!chatColumns.includes(name)) db.exec(`ALTER TABLE chat_logs ADD COLUMN ${name} ${type}`);
   }
 
   const count = db.prepare('SELECT COUNT(*) AS count FROM crop_knowledge').get().count;
@@ -137,9 +158,12 @@ export function rowToPricePrediction(row) {
 export function rowToChatLog(row) {
   return row ? {
     id: Number(row.id),
+    conversation_id: row.conversation_id ? Number(row.conversation_id) : null,
     language: row.language,
     message: row.message,
     answer: row.answer,
+    provider: row.provider,
+    model: row.model,
     created_date: row.created_date,
   } : null;
 }

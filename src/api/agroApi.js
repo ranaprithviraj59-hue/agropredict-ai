@@ -37,8 +37,8 @@ export const agroApi = {
   },
   chat: Object.assign(sendChatMessage, {
     sendMessage: sendChatMessage,
-    conversations: () => Promise.resolve([]),
-    history: () => Promise.resolve([]),
+    conversations: (language) => request(`/chat/conversations${language ? `?language=${encodeURIComponent(language)}` : ''}`),
+    history: (id) => request(`/chat/history/${id}`),
   }),
   admin: () => request('/admin/summary', {
     headers: { 'x-admin-key': localStorage.getItem('agropredict_admin_key') || '' },

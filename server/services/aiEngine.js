@@ -1,10 +1,49 @@
 // Advanced Dynamic Agricultural Knowledge Engine for Kisan AI
+import { normalizeLanguage } from './kisanPrompt.js';
 
 export function generateDynamicKisanAnswer(message, language = 'en') {
   const query = String(message || '').toLowerCase().trim();
+  const normalizedLanguage = normalizeLanguage(language);
 
-  const isHindi = language === 'hi';
-  const isGujarati = language === 'gu';
+  const isHindi = normalizedLanguage === 'hi';
+  const isGujarati = normalizedLanguage === 'gu';
+  const asksCropChoice = (
+    query.includes('which crop') ||
+    query.includes('best crop') ||
+    query.includes('crop should') ||
+    query.includes('what crop') ||
+    query.includes('grow in') ||
+    query.includes('recommend crop') ||
+    query.includes('फसल कौन') ||
+    query.includes('कौन सी फसल') ||
+    query.includes('કયો પાક') ||
+    query.includes('શ્રેષ્ઠ પાક')
+  );
+
+  if (asksCropChoice) {
+    if (isHindi) {
+      return `🌾 **फसल चयन सलाह:**\n\n` +
+        `आपके प्रश्न के अनुसार फसल चुनते समय मिट्टी, पानी, मौसम, pH, NPK और बाजार भाव को साथ में देखना चाहिए।\n\n` +
+        `- **Alluvial/Loamy मिट्टी + अच्छा पानी:** धान, गेहूं, मक्का और सब्जियां अच्छे विकल्प हो सकते हैं।\n` +
+        `- **Black cotton मिट्टी:** कपास, सोयाबीन, तूर और गेहूं उपयोगी रहते हैं।\n` +
+        `- **Sandy/कम पानी:** चना, सरसों, बाजरा और मूंगफली बेहतर रहते हैं।\n\n` +
+        `💡 सही AI स्कोर के लिए **My Farm** में खेत की जानकारी भरें और **Predict Crops** चलाएं।`;
+    }
+    if (isGujarati) {
+      return `🌾 **પાક પસંદગી સલાહ:**\n\n` +
+        `પાક પસંદ કરતી વખતે માટી, પાણી, ઋતુ, pH, NPK અને બજાર ભાવ સાથે જોવું જોઈએ.\n\n` +
+        `- **Alluvial/Loamy માટી + પૂરતું પાણી:** ચોખા, ઘઉં, મકાઈ અને શાકભાજી સારા વિકલ્પ છે.\n` +
+        `- **Black cotton માટી:** કપાસ, સોયાબીન, તુવેર અને ઘઉં ઉપયોગી છે.\n` +
+        `- **Sandy/ઓછું પાણી:** ચણા, સરસવ, બાજરી અને મગફળી વધુ યોગ્ય છે.\n\n` +
+        `💡 ચોક્કસ AI સ્કોર માટે **My Farm** માં માહિતી भरो અને **Predict Crops** ચલાવો.`;
+    }
+    return `🌾 **Crop Recommendation Guidance:**\n\n` +
+      `For crop choice, combine soil type, water source, season, pH, NPK, climate, previous crop, and market price.\n\n` +
+      `- **Alluvial or loamy soil with canal/good water:** Rice, Wheat, Maize, and vegetables can perform well depending on season.\n` +
+      `- **Black cotton soil:** Cotton, Soybean, Pigeon pea, and Wheat are strong options.\n` +
+      `- **Sandy or low-water farms:** Chickpea, Mustard, Bajra, Groundnut, and Cumin are safer choices.\n\n` +
+      `💡 For an exact ranked result, add your farm in **My Farm** and run **Predict Crops**. The app will include live weather and local farm data.`;
+  }
 
   // 1. Harvesting / Harvesting Methods
   if (query.includes('harvest') || query.includes('कटाई') || query.includes('લણણી')) {
@@ -41,6 +80,13 @@ export function generateDynamicKisanAnswer(message, language = 'en') {
         `- **ई-नाम (e-NAM):** राष्ट्रीय कृषि बाजार पोर्टल पर ऑनलाइन बोली लगाकर बेहतर दाम प्राप्त करें।\n\n` +
         `💡 *सुझाव:* हमारे ऐप के **Price Predictor** फीचर का उपयोग करके 6 महीने का पूर्वानुमान देखें।`;
     }
+    if (isGujarati) {
+      return `💰 **પાક ભાવ અને બજાર વલણ સલાહ:**\n\n` +
+        `- **મંડી ભાવ તુલના:** નજીકની 3 મંડીઓમાં રોજની આવક, ઓછો ભાવ, વધુ ભાવ અને મોડલ ભાવ તપાસો.\n` +
+        `- **સંગ્રહ વ્યૂહરચના:** જો બજારમાં આવક વધારે હોય તો અનાજને સુકા ગોડાઉનમાં 2-4 અઠવાડિયા રાખીને વેચવાથી વધુ ભાવ મળી શકે.\n` +
+        `- **e-NAM:** રાષ્ટ્રીય કૃષિ બજાર પોર્ટલ પર ઓનલાઇન બોલી દ્વારા બીજા વિસ્તારોના ખરીદદારો સુધી પહોંચી શકો છો.\n\n` +
+        `💡 *સૂચન:* ચોક્કસ અંદાજ માટે એપના **Price Predictor** માં પાક, રાજ્ય, જિલ્લા અને જથ્થો દાખલ કરો.`;
+    }
     return `💰 **Market Price & Mandi Selling Strategy:**\n\n` +
       `- **Mandi Price Analysis:** Monitor daily arrival volumes in nearby regional mandis. High arrivals generally depress prices in the short term.\n` +
       `- **Strategic Storage:** Store non-perishable grains in dry warehouses for 3-6 weeks post-harvest to fetch 15-25% higher off-season margins.\n` +
@@ -56,6 +102,13 @@ export function generateDynamicKisanAnswer(message, language = 'en') {
         `2. **फेरोमोन ट्रैप:** प्रति एकड़ 4-5 फेरोमोन ट्रैप लगाएं ताकि हानिकारक कीटों की पहचान हो सके।\n` +
         `3. **मित्र कीट:** लेडीबग और ट्राइकोग्राम फार्मर फ्रेंडली कीटों का संरक्षण करें।\n` +
         `4. **रासायनिक नियंत्रण:** केवल अत्यधिक प्रकोप की स्थिति में ही अनुशंसित कीटनाशक का सही मात्रा में छिड़काव करें।`;
+    }
+    if (isGujarati) {
+      return `🐛 **જીવાત અને રોગ નિયંત્રણ સલાહ:**\n\n` +
+        `1. **જૈવિક નિયંત્રણ:** જીવાત દેખાય ત્યારે નીમ તેલ 5 મિલી પ્રતિ લીટર પાણીમાં ભેળવી છંટકાવ કરો.\n` +
+        `2. **ફેરોમોન/પીળા સ્ટિકી ટ્રેપ:** પ્રતિ એકર 4-6 ટ્રેપ લગાવી જીવાતની શરૂઆતમાં ઓળખ કરો.\n` +
+        `3. **પાક ફેરબદલી:** એક જ પાક વારંવાર ન લેવો, જેથી જીવાત અને જમીનજન્ય રોગનો ચક્ર તૂટે.\n` +
+        `4. **દવા ઉપયોગ:** પ્રકોપ વધારે હોય ત્યારે જ ભલામણ કરેલી દવા યોગ્ય માત્રામાં વાપરો.`;
     }
     return `🐛 **Integrated Pest & Disease Management (IPM):**\n\n` +
       `1. **Biological Control:** Spray Neem oil solution (10,000 PPM @ 5ml/liter water) at the first sign of pests.\n` +
@@ -73,6 +126,13 @@ export function generateDynamicKisanAnswer(message, language = 'en') {
         `- **सिंचाई का समय:** हमेशा तड़के सुबह या देर शाम सिंचाई करें।\n` +
         `- **कम पानी वाली फसलें:** चना, सरसों, बाजरा और मूंगफली का चयन करें।`;
     }
+    if (isGujarati) {
+      return `💧 **પાણી વ્યવસ્થાપન અને કાર્યક્ષમ સિંચાઈ:**\n\n` +
+        `- **ડ્રિપ સિંચાઈ:** પાણી સીધું મૂળ સુધી પહોંચે છે, 50-60% પાણી બચી શકે અને નિંદામણ ઓછું થાય.\n` +
+        `- **મલ્ચિંગ:** સૂકી ઘાસ અથવા પ્લાસ્ટિક મલ્ચથી જમીનમાંથી પાણીનું બાષ્પીભવન ઘટે છે.\n` +
+        `- **સિંચાઈ સમય:** વહેલી સવારે અથવા સાંજે સિંચાઈ કરો, જેથી ગરમીથી પાણીનો બગાડ ઓછો થાય.\n` +
+        `- **ઓછા પાણીના પાક:** ચણા, સરસવ, બાજરી, જુવાર અને મગફળી સારા વિકલ્પ છે.`;
+    }
     return `💧 **Precision Irrigation & Water Conservation:**\n\n` +
       `- **Drip Irrigation:** Delivers water directly to crop roots, saving 50-60% water while reducing weed growth.\n` +
       `- **Mulching Practices:** Organic or plastic mulching reduces soil moisture evaporation by up to 40%.\n` +
@@ -89,6 +149,13 @@ export function generateDynamicKisanAnswer(message, language = 'en') {
         `- **जैविक खाद:** प्रति एकड़ 4-5 टन गोबर की खाद (FYM) या वर्मीकंपोस्ट डालें।\n` +
         `- **संतुलित NPK:** आवश्यकतानुसार नाइट्रोजन (N), फास्फोरस (P) और पोटाश (K) का संतुलित प्रयोग करें।`;
     }
+    if (isGujarati) {
+      return `🌱 **જમીન સ્વાસ્થ્ય અને ખાતર વ્યવસ્થાપન:**\n\n` +
+        `- **માટી પરીક્ષણ:** દર 2 વર્ષે Soil Health Card અથવા લેબ ટેસ્ટ કરાવો.\n` +
+        `- **pH સ્તર:** મોટાભાગના પાક માટે pH 6.5 થી 7.5 યોગ્ય છે. અમ્લીય જમીનમાં ચૂનો અને ક્ષારિય જમીનમાં જિપ્સમ ઉપયોગી છે.\n` +
+        `- **જૈવિક ખાતર:** વાવણી પહેલાં પ્રતિ એકર 4-5 ટન સડી ગયેલું છાણિયું ખાતર અથવા વર્મીકમ્પોસ્ટ નાખો.\n` +
+        `- **સંતુલિત NPK:** પાક અને ટેસ્ટ મુજબ નાઇટ્રોજન, ફોસ્ફરસ અને પોટાશનું સંતુલિત પ્રમાણ રાખો.`;
+    }
     return `🌱 **Soil Chemistry & Fertilizer Management:**\n\n` +
       `- **Soil pH Balance:** Optimal pH range for most agricultural crops is 6.2 - 7.5. Apply agricultural lime for acidic soil (<6.0) or gypsum for alkaline soil (>8.0).\n` +
       `- **NPK Ratio:** Maintain balanced Nitrogen (N), Phosphorus (P), and Potassium (K) based on crop requirements.\n` +
@@ -97,6 +164,20 @@ export function generateDynamicKisanAnswer(message, language = 'en') {
 
   // 6. Organic Farming / Bio
   if (query.includes('organic') || query.includes('जैविक') || query.includes('કાર્બનિક')) {
+    if (isHindi) {
+      return `🌿 **जैविक खेती के अच्छे तरीके:**\n\n` +
+        `1. **जैव उर्वरक:** दलहनी फसलों में Rhizobium और अन्य फसलों में Azotobacter उपयोग करें.\n` +
+        `2. **जीवामृत/पंचगव्य:** गोबर, गोमूत्र, गुड़ और बेसन से जैविक घोल बनाकर प्रयोग करें.\n` +
+        `3. **कम्पोस्ट:** फसल अवशेषों से वर्मी कम्पोस्ट बनाकर मिट्टी में जैविक कार्बन बढ़ाएं.\n` +
+        `4. **प्रमाणन:** प्रीमियम भाव के लिए जैविक प्रमाणन प्रक्रिया की जानकारी लें.`;
+    }
+    if (isGujarati) {
+      return `🌿 **કાર્બનિક ખેતી માટે શ્રેષ્ઠ પદ્ધતિઓ:**\n\n` +
+        `1. **જૈવ ખાતર:** દાળવાળા પાકમાં Rhizobium અને અન્ય પાકમાં Azotobacter ઉપયોગ કરો.\n` +
+        `2. **જીવામૃત/પંચગવ્ય:** છાણ, ગૌમૂત્ર, ગોળ અને દાળના લોટથી દ્રાવણ બનાવી વાપરો.\n` +
+        `3. **કમ્પોસ્ટ:** પાકના અવશેષથી વર્મીકમ્પોસ્ટ બનાવી જમીનમાં જૈવિક કાર્બન વધારો.\n` +
+        `4. **પ્રમાણન:** વધુ ભાવ માટે કાર્બનિક પ્રમાણપત્રની પ્રક્રિયા વિશે માહિતી લો.`;
+    }
     return `🌿 **Organic Farming Best Practices:**\n\n` +
       `1. **Bio-fertilizers:** Use Rhizobium for legumes and Azotobacter for non-legume crops to boost natural nitrogen fixing.\n` +
       `2. **Panchagavya & Jeevamrut:** Prepare organic liquid bio-stimulants using cow dung, urine, jaggery, and pulse flour.\n` +
@@ -105,6 +186,24 @@ export function generateDynamicKisanAnswer(message, language = 'en') {
   }
 
   // 7. General / Catch-all Dynamic Answer
+  if (isHindi) {
+    return `🌾 **किसान AI स्मार्ट खेती सलाह:**\n\n` +
+      `"${message}" के लिए अच्छे परिणाम पाने हेतु ये बातें ध्यान रखें:\n\n` +
+      `1. **मिट्टी और मौसम:** मिट्टी का प्रकार, pH, NPK और मौसम के अनुसार फसल चुनें.\n` +
+      `2. **संसाधन प्रबंधन:** पानी और खाद का उपयोग मिट्टी जांच के अनुसार करें.\n` +
+      `3. **कीट निगरानी:** हर सप्ताह खेत का निरीक्षण करें ताकि रोग जल्दी पकड़ा जाए.\n` +
+      `4. **बाजार समय:** कटाई से पहले नजदीकी मंडी भाव और मांग देखें.\n\n` +
+      `💡 *अगला कदम:* **My Farm** में खेत की जानकारी जोड़कर **Predict Crops** चलाएं.`;
+  }
+  if (isGujarati) {
+    return `🌾 **કિસાન AI સ્માર્ટ ખેતી સલાહ:**\n\n` +
+      `"${message}" માટે સારા પરિણામ મેળવવા આ બાબતો ધ્યાનમાં રાખો:\n\n` +
+      `1. **માટી અને હવામાન:** માટીનો પ્રકાર, pH, NPK અને ઋતુ મુજબ પાક પસંદ કરો.\n` +
+      `2. **સંસાધન વ્યવસ્થાપન:** પાણી અને ખાતરનો ઉપયોગ માટી ટેસ્ટ મુજબ કરો.\n` +
+      `3. **જીવાત દેખરેખ:** દર અઠવાડિયે પાકની તપાસ કરો જેથી રોગ વહેલો પકડાય.\n` +
+      `4. **બજાર સમય:** લણણી પહેલાં નજીકની મંડીના ભાવ અને માંગ તપાસો.\n\n` +
+      `💡 *આગળનું પગલું:* **My Farm** માં ખેતરની માહિતી ઉમેરો અને **Predict Crops** ચલાવો.`;
+  }
   return `🌾 **Kisan AI Smart Farming Recommendation:**\n\n` +
     `For optimal agricultural results regarding "${message}":\n\n` +
     `1. **Soil & Climate Alignment:** Ensure your soil texture (Clay, Loam, Sandy) and season (Kharif, Rabi, Zaid) match crop thermal tolerance.\n` +

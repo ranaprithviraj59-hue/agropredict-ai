@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
-  Activity, Droplets, Thermometer, Layers, Sun, Wind, CloudRain,
-  CheckCircle2, Sparkles, ArrowRight, Compass, Cpu, Zap, BarChart2, Sprout
+  Activity, Droplets, Thermometer, Layers, Sun,
+  CheckCircle2, Sparkles, ArrowRight, Compass, Cpu, Sprout
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 

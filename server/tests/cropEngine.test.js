@@ -42,3 +42,26 @@ test('predictCrops penalizes high-water crops when water is scarce', () => {
   assert.ok(!rice || chickpea.success_probability > rice.success_probability);
   assert.ok(result.predictions[0].risks.length > 0);
 });
+
+test('predictCrops includes live weather adjustment when weather context is supplied', () => {
+  const result = predictCrops({
+    location: 'Kutch, Gujarat',
+    soil_type: 'sandy',
+    water_availability: 'scarce',
+    climate_zone: 'arid',
+    irrigation_type: 'drip',
+    soil_ph: 7.3,
+    previous_crop: 'Cotton',
+    farm_size_acres: 3,
+  }, 'kharif', cropKnowledge, {
+    temperature_c: 41,
+    precipitation_mm: 0,
+    humidity_percent: 22,
+    source: 'Open-Meteo',
+  });
+
+  assert.equal(result.weather_context.source, 'Open-Meteo');
+  assert.ok(result.recommendation_notes.includes('live weather'));
+  assert.ok(result.predictions[0].score_breakdown.weather >= 0);
+  assert.ok(result.predictions.some((crop) => crop.risks.some((risk) => risk.includes('hot and dry'))));
+});

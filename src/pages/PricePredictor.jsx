@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, TrendingDown, Minus, Sparkles, DollarSign, BarChart3, Loader2, Info } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Sparkles, DollarSign, BarChart3, Loader2 } from 'lucide-react';
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line } from 'recharts';
 import { toast } from 'sonner';
 
@@ -49,6 +49,8 @@ export default function PricePredictor() {
   const [market, setMarket] = useState('');
   const [season, setSeason] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [state, setState] = useState('');
+  const [district, setDistrict] = useState('');
   const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -62,7 +64,7 @@ export default function PricePredictor() {
     setResult(null);
 
     try {
-      const res = await agroApi.pricePredictions.create({ crop, market, season, quantity });
+      const res = await agroApi.pricePredictions.create({ crop, market, season, quantity, state, district });
       setResult(res);
       toast.success('Market price intelligence calculated!');
     } catch {
@@ -147,6 +149,26 @@ export default function PricePredictor() {
                 className="h-14 bg-slate-900/90 border-slate-700 hover:border-emerald-400 text-white placeholder:text-slate-400 rounded-2xl font-bold text-sm shadow-xl"
               />
             </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-extrabold uppercase tracking-wider text-slate-200">State for Live Mandi</Label>
+              <Input
+                value={state}
+                onChange={(e) => setState(e.target.value)}
+                placeholder="e.g. Gujarat"
+                className="h-14 bg-slate-900/90 border-slate-700 hover:border-emerald-400 text-white placeholder:text-slate-400 rounded-2xl font-bold text-sm shadow-xl"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-extrabold uppercase tracking-wider text-slate-200">District for Live Mandi</Label>
+              <Input
+                value={district}
+                onChange={(e) => setDistrict(e.target.value)}
+                placeholder="e.g. Surat"
+                className="h-14 bg-slate-900/90 border-slate-700 hover:border-emerald-400 text-white placeholder:text-slate-400 rounded-2xl font-bold text-sm shadow-xl"
+              />
+            </div>
           </div>
 
           <Button
@@ -195,8 +217,19 @@ export default function PricePredictor() {
                       <TrendIcon trend={result.trend} />
                       <span className="uppercase">{result.trend || 'Stable'} Market</span>
                     </Badge>
+                    <Badge className={`px-3 py-1 font-bold rounded-xl bg-slate-950 border ${
+                      result.is_live ? 'border-emerald-500/40 text-emerald-300' : 'border-amber-500/40 text-amber-300'
+                    }`}>
+                      {result.is_live ? 'Live Mandi Data' : 'Fallback Estimate'}
+                    </Badge>
                   </div>
                   <p className="text-xs text-slate-300 mt-1 font-medium">Market: {result.market} • Season: {result.season}</p>
+                  {result.data_source && (
+                    <p className="text-xs text-slate-400 mt-1 font-medium">
+                      {result.data_source.label}
+                      {result.is_live && result.data_source.market ? ` • ${result.data_source.market}` : ''}
+                    </p>
+                  )}
                 </div>
 
                 <div className="text-right bg-emerald-500/10 px-5 py-3 rounded-2xl border border-emerald-500/30">
