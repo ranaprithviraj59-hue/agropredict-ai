@@ -34,6 +34,13 @@ export function createDatabase(dbPath = 'server/data/agropredict.db') {
       climate_zone TEXT,
       irrigation_type TEXT,
       soil_ph REAL,
+      ph REAL,
+      n_level REAL,
+      p_level REAL,
+      k_level REAL,
+      temperature REAL,
+      humidity REAL,
+      rainfall REAL,
       organic_matter_percent REAL,
       previous_crop TEXT,
       farming_experience_years REAL,
@@ -77,7 +84,12 @@ export function createDatabase(dbPath = 'server/data/agropredict.db') {
   `);
 
   const farmColumns = db.prepare('PRAGMA table_info(farms)').all().map((column) => column.name);
-  for (const [name, type] of [['state', 'TEXT'], ['district', 'TEXT'], ['city', 'TEXT'], ['region', 'TEXT']]) {
+  const extraCols = [
+    ['state', 'TEXT'], ['district', 'TEXT'], ['city', 'TEXT'], ['region', 'TEXT'],
+    ['ph', 'REAL'], ['n_level', 'REAL'], ['p_level', 'REAL'], ['k_level', 'REAL'],
+    ['temperature', 'REAL'], ['humidity', 'REAL'], ['rainfall', 'REAL']
+  ];
+  for (const [name, type] of extraCols) {
     if (!farmColumns.includes(name)) db.exec(`ALTER TABLE farms ADD COLUMN ${name} ${type}`);
   }
 

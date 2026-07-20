@@ -8,8 +8,7 @@ import SeasonSelector from '@/components/predict/SeasonSelector';
 import CropResultCard from '@/components/predict/CropResultCard';
 import PredictionLoader from '@/components/predict/PredictionLoader';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Sparkles, RotateCcw, Save } from 'lucide-react';
+import { Sparkles, RotateCcw, Save, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Predict() {
@@ -35,67 +34,94 @@ export default function Predict() {
     setIsAnalyzing(true);
     setResults(null);
 
-    const response = await agroApi.cropPredictions.create({
-      farm_id: selectedFarm.id,
-      season,
-    });
+    try {
+      const response = await agroApi.cropPredictions.create({
+        farm_id: selectedFarm.id,
+        season,
+      });
 
-    setResults(response);
-    setIsAnalyzing(false);
-    queryClient.invalidateQueries({ queryKey: ['predictions'] });
-    toast.success('Prediction created and saved to history');
+      setResults(response);
+      queryClient.invalidateQueries({ queryKey: ['predictions'] });
+      toast.success('AI Crop Prediction generated and saved!');
+    } catch {
+      toast.error('Failed to generate crop prediction. Please try again.');
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const savePrediction = async () => {
     if (!results) return;
     queryClient.invalidateQueries({ queryKey: ['predictions'] });
-    toast.success('Prediction is already saved in history');
+    toast.success('Prediction results stored in history');
   };
 
   return (
     <PageTransition>
       <div className="space-y-8">
+        
+        {/* Page Header */}
         <div>
-          <h1 className="font-heading text-3xl font-bold text-foreground">Predict Crops</h1>
-          <p className="text-muted-foreground mt-1">AI-powered crop recommendations for your farm</p>
+          <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-emerald-400 mb-1">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" /> AI Recommendation Engine
+          </div>
+          <h1 className="font-heading text-3xl sm:text-5xl font-extrabold text-white tracking-tight drop-shadow-md">
+            Predict Optimal Crops
+          </h1>
+          <p className="text-slate-300 text-sm sm:text-base mt-1.5 font-medium">
+            Deep AI analysis of soil chemistry, historical weather models, and crop yields.
+          </p>
         </div>
 
-        <Card className="p-6 space-y-6 border-border/50">
-          <FarmSelector farms={farms} selectedFarmId={selectedFarmId} onSelect={setSelectedFarmId} />
-          <SeasonSelector value={season} onChange={setSeason} />
+        {/* Prediction Form Panel */}
+        <div className="bg-slate-950/80 backdrop-blur-xl p-6 sm:p-8 rounded-3xl border border-slate-700/80 shadow-2xl space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FarmSelector farms={farms} selectedFarmId={selectedFarmId} onSelect={setSelectedFarmId} />
+            <SeasonSelector value={season} onChange={setSeason} />
+          </div>
 
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-4 pt-2">
             <Button
               onClick={handlePredict}
               disabled={isAnalyzing || !selectedFarmId || !season}
-              className="bg-primary hover:bg-primary/90 flex-1 h-12 text-base font-semibold"
+              className="btn-luxury flex-1 h-14 text-base font-extrabold gap-3 shadow-2xl"
             >
-              <Sparkles className="w-5 h-5 mr-2" />
-              {isAnalyzing ? 'Analyzing...' : 'Predict Best Crops'}
+              <Sparkles className="w-5 h-5 text-amber-300 animate-pulse" />
+              {isAnalyzing ? 'Analyzing Farm Models...' : 'Predict Best Crops Now'}
             </Button>
+
             {results && (
-              <Button variant="outline" onClick={() => { setResults(null); }} className="h-12">
-                <RotateCcw className="w-4 h-4" />
+              <Button
+                variant="outline"
+                onClick={() => { setResults(null); }}
+                className="btn-luxury-outline h-14 px-5 text-slate-200 hover:text-white"
+              >
+                <RotateCcw className="w-5 h-5" />
               </Button>
             )}
           </div>
-        </Card>
+        </div>
 
+        {/* Loading & Results View */}
         <AnimatePresence mode="wait">
           {isAnalyzing && <PredictionLoader />}
 
           {results && !isAnalyzing && (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               className="space-y-6"
             >
               <div className="flex items-center justify-between">
-                <h2 className="font-heading text-2xl font-bold text-foreground">
-                  Recommended Crops
-                </h2>
-                <Button onClick={savePrediction} variant="outline" className="gap-2">
-                  <Save className="w-4 h-4" />
+                <div>
+                  <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-white">
+                    Recommended Crop Yields
+                  </h2>
+                  <p className="text-xs text-slate-300">Ranked by success probability & net profit potential</p>
+                </div>
+
+                <Button onClick={savePrediction} variant="outline" className="btn-luxury-outline gap-2 text-xs font-bold px-4 py-2.5">
+                  <Save className="w-4 h-4 text-emerald-400" />
                   Save Results
                 </Button>
               </div>
@@ -104,22 +130,24 @@ export default function Predict() {
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-accent/60 rounded-xl p-5 border border-primary/20"
+                  className="bg-slate-900/90 rounded-2xl p-5 border border-emerald-500/30 flex items-start gap-3.5 shadow-xl"
                 >
-                  <p className="text-sm text-foreground leading-relaxed">
-                    💡 {results.recommendation_notes}
+                  <ShieldCheck className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs sm:text-sm text-slate-100 leading-relaxed font-medium">
+                    {results.recommendation_notes}
                   </p>
                 </motion.div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {results.predictions?.map((crop, i) => (
-                  <CropResultCard key={crop.crop_name} crop={crop} index={i} />
+                  <CropResultCard key={crop.crop_name || i} crop={crop} index={i} />
                 ))}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
+
       </div>
     </PageTransition>
   );

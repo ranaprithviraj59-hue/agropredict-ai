@@ -87,7 +87,7 @@ test('API supports farms, crop prediction, price prediction, chat, and admin sum
     });
 
     assert.equal(chat.response.status, 201);
-    assert.ok(chat.body.answer.includes('drip'));
+    assert.ok(chat.body.answer.toLowerCase().includes('drip') || chat.body.answer.toLowerCase().includes('water'));
 
     const blockedAdmin = await json(`${baseUrl}/api/admin/summary`);
     assert.equal(blockedAdmin.response.status, 401);

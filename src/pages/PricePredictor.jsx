@@ -22,12 +22,12 @@ const MARKETS = ['Local Mandi', 'State Market', 'National Market', 'Export'];
 const SEASONS = ['Kharif', 'Rabi', 'Zaid', 'Year Round'];
 
 function TrendIcon({ trend }) {
-  if (trend === 'up') return <TrendingUp className="w-5 h-5 text-green-500" />;
-  if (trend === 'down') return <TrendingDown className="w-5 h-5 text-destructive" />;
-  return <Minus className="w-5 h-5 text-muted-foreground" />;
+  if (trend === 'up') return <TrendingUp className="w-5 h-5 text-emerald-400" />;
+  if (trend === 'down') return <TrendingDown className="w-5 h-5 text-rose-400" />;
+  return <Minus className="w-5 h-5 text-slate-400" />;
 }
 
-function PriceCard({ label, value, unit, color, delay }) {
+function PriceCard({ label, value, unit, delay }) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -35,10 +35,10 @@ function PriceCard({ label, value, unit, color, delay }) {
       transition={{ delay, type: 'spring', stiffness: 200 }}
       whileHover={{ y: -4 }}
     >
-      <Card className={`p-5 border-2 ${color} hover:shadow-lg transition-all duration-300`}>
-        <p className="text-xs text-muted-foreground mb-2">{label}</p>
-        <p className="text-2xl font-bold text-foreground">{value}</p>
-        <p className="text-xs text-muted-foreground mt-1">{unit}</p>
+      <Card className="p-6 bg-slate-900/90 backdrop-blur-xl border border-slate-700 hover:border-emerald-400/50 shadow-xl transition-all">
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">{label}</p>
+        <p className="text-3xl font-extrabold font-heading text-white">{value}</p>
+        <p className="text-xs text-amber-300 font-semibold mt-1">{unit}</p>
       </Card>
     </motion.div>
   );
@@ -61,75 +61,90 @@ export default function PricePredictor() {
     setIsLoading(true);
     setResult(null);
 
-    const res = await agroApi.pricePredictions.create({ crop, market, season, quantity });
-
-    setResult(res);
-    setIsLoading(false);
+    try {
+      const res = await agroApi.pricePredictions.create({ crop, market, season, quantity });
+      setResult(res);
+      toast.success('Market price intelligence calculated!');
+    } catch {
+      toast.error('Failed to fetch market data. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const trendColor = result?.trend === 'up' ? 'text-green-500' : result?.trend === 'down' ? 'text-destructive' : 'text-muted-foreground';
+  const trendColor = result?.trend === 'up' ? 'text-emerald-400' : result?.trend === 'down' ? 'text-rose-400' : 'text-slate-400';
 
   return (
     <PageTransition>
       <div className="space-y-8">
+        
+        {/* Header */}
         <div>
-          <h1 className="font-heading text-3xl font-bold text-foreground">Price Predictor</h1>
-          <p className="text-muted-foreground mt-1">AI-powered crop price forecasting using real market data</p>
+          <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-emerald-400 mb-1">
+            <TrendingUp className="w-3.5 h-3.5 text-amber-400" /> Real-Time Mandi Analytics
+          </div>
+          <h1 className="font-heading text-3xl sm:text-5xl font-extrabold text-white tracking-tight drop-shadow-md">
+            Market Price Predictor
+          </h1>
+          <p className="text-slate-300 text-sm sm:text-base mt-1.5 font-medium">
+            AI-powered crop price forecasting & revenue optimization using live market telemetry.
+          </p>
         </div>
 
-        {/* Input Form */}
-        <Card className="p-6 border-border/50">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Input Form Panel */}
+        <div className="bg-slate-950/80 backdrop-blur-xl p-6 sm:p-8 rounded-3xl border border-slate-700/80 shadow-2xl space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
             <div className="space-y-2">
-              <Label>Crop Name *</Label>
+              <Label className="text-xs font-extrabold uppercase tracking-wider text-slate-200">Crop Name *</Label>
               <Select value={crop} onValueChange={setCrop}>
-                <SelectTrigger className="h-12">
+                <SelectTrigger className="h-14 bg-slate-900/90 border-slate-700 hover:border-emerald-400 text-white placeholder:text-slate-400 rounded-2xl font-bold text-sm shadow-xl">
                   <SelectValue placeholder="Select crop..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-slate-950 border-slate-700 text-white rounded-2xl p-1 shadow-2xl">
                   {CROPS.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                    <SelectItem key={c} value={c} className="rounded-xl py-2 font-bold focus:bg-emerald-500/20 focus:text-emerald-300">{c}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label>Market Type *</Label>
+              <Label className="text-xs font-extrabold uppercase tracking-wider text-slate-200">Market Type *</Label>
               <Select value={market} onValueChange={setMarket}>
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Select market..." />
+                <SelectTrigger className="h-14 bg-slate-900/90 border-slate-700 hover:border-emerald-400 text-white placeholder:text-slate-400 rounded-2xl font-bold text-sm shadow-xl">
+                  <SelectValue placeholder="Select market type..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-slate-950 border-slate-700 text-white rounded-2xl p-1 shadow-2xl">
                   {MARKETS.map((m) => (
-                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                    <SelectItem key={m} value={m} className="rounded-xl py-2 font-bold focus:bg-emerald-500/20 focus:text-emerald-300">{m}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label>Season *</Label>
+              <Label className="text-xs font-extrabold uppercase tracking-wider text-slate-200">Season *</Label>
               <Select value={season} onValueChange={setSeason}>
-                <SelectTrigger className="h-12">
+                <SelectTrigger className="h-14 bg-slate-900/90 border-slate-700 hover:border-emerald-400 text-white placeholder:text-slate-400 rounded-2xl font-bold text-sm shadow-xl">
                   <SelectValue placeholder="Select season..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-slate-950 border-slate-700 text-white rounded-2xl p-1 shadow-2xl">
                   {SEASONS.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                    <SelectItem key={s} value={s} className="rounded-xl py-2 font-bold focus:bg-emerald-500/20 focus:text-emerald-300">{s}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label>Quantity (quintals, optional)</Label>
+              <Label className="text-xs font-extrabold uppercase tracking-wider text-slate-200">Quantity (Quintals, optional)</Label>
               <Input
                 type="number"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
                 placeholder="e.g. 50"
-                className="h-12"
+                className="h-14 bg-slate-900/90 border-slate-700 hover:border-emerald-400 text-white placeholder:text-slate-400 rounded-2xl font-bold text-sm shadow-xl"
               />
             </div>
           </div>
@@ -137,30 +152,31 @@ export default function PricePredictor() {
           <Button
             onClick={handlePredict}
             disabled={isLoading || !crop || !market || !season}
-            className="mt-6 w-full h-12 bg-primary font-semibold text-base shadow-lg shadow-primary/20"
+            className="mt-6 w-full h-14 btn-luxury font-extrabold text-base shadow-2xl gap-3"
           >
             {isLoading ? (
-              <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Fetching market data...</>
+              <><Loader2 className="w-5 h-5 animate-spin text-amber-300" />Fetching Mandi Analytics...</>
             ) : (
-              <><Sparkles className="w-5 h-5 mr-2" />Predict Price</>
+              <><Sparkles className="w-5 h-5 text-amber-300 animate-pulse" />Predict Price & Revenue Trends</>
             )}
           </Button>
-        </Card>
+        </div>
 
+        {/* Results Showcase */}
         <AnimatePresence mode="wait">
           {isLoading && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center py-12"
+              className="flex flex-col items-center justify-center py-16 bg-slate-950/80 rounded-3xl border border-slate-800"
             >
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                className="w-16 h-16 rounded-full border-4 border-primary/20 border-t-primary mb-4"
+                className="w-16 h-16 rounded-full border-4 border-emerald-500/20 border-t-emerald-400 mb-4"
               />
-              <p className="text-muted-foreground text-sm">Analyzing real-time market data...</p>
+              <p className="text-slate-300 font-bold text-sm">Analyzing live commodity market vectors...</p>
             </motion.div>
           )}
 
@@ -170,145 +186,98 @@ export default function PricePredictor() {
               animate={{ opacity: 1, y: 0 }}
               className="space-y-6"
             >
-              {/* Crop + trend header */}
-              <div className="flex items-center gap-3 flex-wrap">
-                <h2 className="font-heading text-2xl font-bold text-foreground">{crop}</h2>
-                <Badge className={`flex items-center gap-1 ${
-                  result.trend === 'up' ? 'bg-green-500/10 text-green-600 border-green-500/20' :
-                  result.trend === 'down' ? 'bg-destructive/10 text-destructive border-destructive/20' :
-                  'bg-muted text-muted-foreground'
-                }`}>
-                  <TrendIcon trend={result.trend} />
-                  {result.trend === 'up' ? '+' : result.trend === 'down' ? '-' : ''}{Math.abs(result.trend_percent || 0)}% (1 month)
-                </Badge>
+              {/* Summary Header */}
+              <div className="bg-slate-900/90 rounded-3xl p-6 border border-emerald-500/30 flex flex-wrap items-center justify-between gap-4 shadow-2xl">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <h2 className="font-heading text-2xl font-extrabold text-white">{result.crop} Price Forecast</h2>
+                    <Badge className={`px-3 py-1 font-bold rounded-xl flex items-center gap-1 bg-slate-950 border border-slate-700 ${trendColor}`}>
+                      <TrendIcon trend={result.trend} />
+                      <span className="uppercase">{result.trend || 'Stable'} Market</span>
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-slate-300 mt-1 font-medium">Market: {result.market} • Season: {result.season}</p>
+                </div>
+
+                <div className="text-right bg-emerald-500/10 px-5 py-3 rounded-2xl border border-emerald-500/30">
+                  <p className="text-xs text-slate-400 uppercase font-bold">Predicted Price</p>
+                  <p className="text-3xl font-extrabold font-heading text-emerald-400">
+                    ₹{result.predicted_price_per_quintal} <span className="text-xs font-normal text-slate-300">/ quintal</span>
+                  </p>
+                </div>
               </div>
 
-              {/* Price cards */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <PriceCard label="Current Price" value={`₹${result.current_price?.toLocaleString()}`} unit="per quintal" color="border-primary/30" delay={0} />
-                <PriceCard label="1 Month" value={`₹${result.price_1_month?.toLocaleString()}`} unit="predicted" color="border-chart-2/30" delay={0.1} />
-                <PriceCard label="3 Months" value={`₹${result.price_3_months?.toLocaleString()}`} unit="predicted" color="border-secondary/30" delay={0.2} />
-                <PriceCard label="6 Months" value={`₹${result.price_6_months?.toLocaleString()}`} unit="predicted" color="border-chart-1/30" delay={0.3} />
+              {/* Price Cards Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <PriceCard label="Min Price Range" value={`₹${result.min_price}`} unit="per quintal" delay={0.1} />
+                <PriceCard label="Predicted Price" value={`₹${result.predicted_price_per_quintal}`} unit="per quintal" delay={0.2} />
+                <PriceCard label="Max Price Range" value={`₹${result.max_price}`} unit="per quintal" delay={0.3} />
               </div>
 
-              {/* Revenue if quantity given */}
-              {result.total_revenue && quantity && (
+              {/* Total Estimated Revenue Card */}
+              {result.total_estimated_revenue && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.4 }}
+                  className="bg-gradient-to-r from-emerald-950 via-teal-950 to-slate-950 p-6 rounded-3xl border border-emerald-500/40 flex items-center justify-between gap-4 shadow-2xl"
                 >
-                  <Card className="p-5 bg-primary/5 border-primary/30 flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <DollarSign className="w-6 h-6 text-primary" />
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center text-amber-400 border border-amber-500/30">
+                      <DollarSign className="w-6 h-6" />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Estimated Revenue for {quantity} quintals</p>
-                      <p className="text-3xl font-bold text-primary">₹{result.total_revenue?.toLocaleString()}</p>
+                      <h3 className="font-heading text-lg font-bold text-white">Estimated Total Farm Revenue</h3>
+                      <p className="text-xs text-slate-300">Based on {result.quantity_quintals} quintals yield projection</p>
                     </div>
-                  </Card>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-3xl font-extrabold font-heading text-amber-300">
+                      ₹{Number(result.total_estimated_revenue).toLocaleString()}
+                    </span>
+                  </div>
                 </motion.div>
               )}
 
-              {/* Price range */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.4 }}
-              >
-                <Card className="p-5 border-border/50">
-                  <h3 className="font-semibold text-sm text-foreground mb-3">Price Range</h3>
-                  <div className="flex items-center gap-4">
-                    <span className="text-sm text-muted-foreground">₹{result.min_price?.toLocaleString()}</span>
-                    <div className="flex-1 h-3 rounded-full bg-muted relative overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{
-                          width: `${((result.current_price - result.min_price) / (result.max_price - result.min_price)) * 100}%`
-                        }}
-                        transition={{ duration: 1, delay: 0.5, ease: 'easeOut' }}
-                        className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-secondary to-primary"
-                      />
-                    </div>
-                    <span className="text-sm text-muted-foreground">₹{result.max_price?.toLocaleString()}</span>
+              {/* 6-Month Price Trend Chart */}
+              {result.monthly_trend && (
+                <div className="bg-slate-900/90 rounded-3xl p-6 border border-slate-800 shadow-2xl space-y-4">
+                  <div className="flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-emerald-400" />
+                    <h3 className="font-heading text-xl font-bold text-white">6-Month Price Trajectory Forecast</h3>
                   </div>
-                </Card>
-              </motion.div>
 
-              {/* Chart */}
-              {result.monthly_forecast?.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                >
-                  <Card className="p-5 border-border/50">
-                    <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                      <BarChart3 className="w-4 h-4 text-primary" />
-                      6-Month Price Forecast
-                    </h3>
-                    <ResponsiveContainer width="100%" height={220}>
-                      <LineChart data={result.monthly_forecast}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                        <XAxis dataKey="month" tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} />
-                        <YAxis tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v) => `₹${v}`} />
+                  <div className="h-64 w-full pt-4">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={result.monthly_trend}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.5} />
+                        <XAxis dataKey="month" stroke="#94a3b8" fontSize={12} />
+                        <YAxis stroke="#94a3b8" fontSize={12} domain={['auto', 'auto']} />
                         <Tooltip
-                          formatter={(v) => [`₹${v?.toLocaleString()}`, 'Price']}
-                          contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8 }}
+                          contentStyle={{
+                            backgroundColor: '#0f172a',
+                            borderColor: '#334155',
+                            borderRadius: '12px',
+                            color: '#ffffff',
+                          }}
                         />
                         <Line
                           type="monotone"
                           dataKey="price"
-                          stroke="hsl(var(--primary))"
+                          stroke="#10b981"
                           strokeWidth={3}
-                          dot={{ fill: 'hsl(var(--primary))', r: 5 }}
-                          activeDot={{ r: 7 }}
+                          dot={{ fill: '#f59e0b', r: 5 }}
+                          activeDot={{ r: 8 }}
                         />
                       </LineChart>
                     </ResponsiveContainer>
-                  </Card>
-                </motion.div>
+                  </div>
+                </div>
               )}
 
-              {/* Market factors */}
-              {result.market_factors?.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 }}
-                >
-                  <Card className="p-5 border-border/50">
-                    <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                      <Info className="w-4 h-4 text-primary" />
-                      Market Factors
-                    </h3>
-                    <ul className="space-y-2">
-                      {result.market_factors.map((f, i) => (
-                        <motion.li
-                          key={i}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.65 + i * 0.08 }}
-                          className="flex items-start gap-2 text-sm text-muted-foreground"
-                        >
-                          <span className="text-primary mt-0.5">•</span>
-                          {f}
-                        </motion.li>
-                      ))}
-                    </ul>
-                    {result.best_sell_time && (
-                      <div className="mt-4 bg-primary/5 rounded-lg p-3 border border-primary/20">
-                        <p className="text-sm font-medium text-primary">
-                          🕐 Best time to sell: {result.best_sell_time}
-                        </p>
-                      </div>
-                    )}
-                  </Card>
-                </motion.div>
-              )}
             </motion.div>
           )}
         </AnimatePresence>
+
       </div>
     </PageTransition>
   );

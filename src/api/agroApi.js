@@ -12,6 +12,8 @@ async function request(path, options = {}) {
   return body;
 }
 
+const sendChatMessage = (data) => request('/chat', { method: 'POST', body: JSON.stringify(data) });
+
 export const agroApi = {
   me: () => Promise.resolve({ full_name: 'AgroPredict Admin', role: 'admin' }),
   locationKnowledge: () => request('/location-knowledge'),
@@ -33,7 +35,11 @@ export const agroApi = {
     list: () => request('/predictions/price'),
     create: (data) => request('/predictions/price', { method: 'POST', body: JSON.stringify(data) }),
   },
-  chat: (data) => request('/chat', { method: 'POST', body: JSON.stringify(data) }),
+  chat: Object.assign(sendChatMessage, {
+    sendMessage: sendChatMessage,
+    conversations: () => Promise.resolve([]),
+    history: () => Promise.resolve([]),
+  }),
   admin: () => request('/admin/summary', {
     headers: { 'x-admin-key': localStorage.getItem('agropredict_admin_key') || '' },
   }),

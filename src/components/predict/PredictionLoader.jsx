@@ -1,38 +1,42 @@
 import { motion } from 'framer-motion';
-import { Sprout } from 'lucide-react';
+import { Sprout, Sparkles, Cpu } from 'lucide-react';
 
 export default function PredictionLoader() {
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="flex flex-col items-center justify-center py-16"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="flex flex-col items-center justify-center py-16 px-6 glass-panel rounded-3xl border border-emerald-500/30 shadow-2xl my-6"
     >
-      <motion.div
-        animate={{
-          scale: [1, 1.2, 1],
-          rotate: [0, 5, -5, 0],
-        }}
-        transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-        className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6"
-      >
-        <Sprout className="w-10 h-10 text-primary" />
-      </motion.div>
-      <h3 className="font-heading text-xl font-semibold text-foreground mb-2">
-        Analyzing Your Farm...
-      </h3>
-      <p className="text-sm text-muted-foreground text-center max-w-sm">
-        Our AI is evaluating soil conditions, water availability, climate data, and market trends to find the best crops for you.
+      <div className="relative mb-6">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+          className="w-24 h-24 rounded-full border-2 border-dashed border-emerald-500/50 flex items-center justify-center"
+        />
+        <motion.div
+          animate={{ scale: [1, 1.15, 1] }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute inset-0 m-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/40 text-white"
+        >
+          <Sprout className="w-8 h-8 animate-pulse" />
+        </motion.div>
+      </div>
+
+      <div className="flex items-center gap-2 mb-2">
+        <Cpu className="w-4 h-4 text-emerald-500 animate-spin" />
+        <h3 className="font-heading text-2xl font-bold text-foreground">
+          Running Neural Agronomy AI...
+        </h3>
+      </div>
+
+      <p className="text-xs sm:text-sm text-muted-foreground text-center max-w-md leading-relaxed">
+        Analyzing soil N-P-K ratios, satellite microclimate vectors, regional water table indexes, and market price liquidity to determine top crop recommendations.
       </p>
-      <div className="flex gap-1 mt-6">
-        {[0, 1, 2].map((i) => (
-          <motion.div
-            key={i}
-            animate={{ y: [0, -8, 0] }}
-            transition={{ delay: i * 0.2, duration: 0.6, repeat: Infinity }}
-            className="w-2 h-2 rounded-full bg-primary"
-          />
-        ))}
+
+      <div className="flex items-center gap-2 mt-6 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-semibold text-emerald-600 dark:text-emerald-300">
+        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+        <span>Optimizing Yield & Profitability Matrix</span>
       </div>
     </motion.div>
   );

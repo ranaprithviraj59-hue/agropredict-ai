@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import ReactMarkdown from 'react-markdown';
-import { Send, Bot, User, Loader2, RefreshCw, Languages } from 'lucide-react';
+import { Send, Bot, Loader2, RefreshCw, Languages, Sparkles } from 'lucide-react';
 
 const LANGUAGES = [
   { code: 'en', label: 'English', flag: '🇬🇧' },
@@ -21,23 +21,17 @@ const QUICK_PROMPTS = {
     { label: '💧 Save water tips', text: 'How can I save water while irrigating my farm?' },
     { label: '🌱 Improve soil health', text: 'How can I improve my soil health organically?' },
     { label: '💰 Profitable crops 2025', text: 'Which crops are most profitable to grow in 2025?' },
-    { label: '🌦️ Monsoon farming tips', text: 'Give me tips for farming during monsoon season.' },
   ],
   hi: [
     { label: '🌾 मिट्टी के लिए सबसे अच्छी फसल', text: 'मिट्टी के लिए सबसे अच्छी फसलें कौन सी हैं? हिंदी में बताएं।' },
     { label: '🐛 कीट नियंत्रण', text: 'फसलों को कीड़ों से बचाने के प्राकृतिक तरीके क्या हैं? हिंदी में बताएं।' },
     { label: '💧 पानी बचाने के टिप्स', text: 'खेत में सिंचाई करते समय पानी कैसे बचाएं? हिंदी में बताएं।' },
     { label: '🌱 मिट्टी की सेहत सुधारें', text: 'जैविक तरीके से मिट्टी की सेहत कैसे सुधारें? हिंदी में बताएं।' },
-    { label: '💰 लाभदायक फसलें 2025', text: '2025 में कौन सी फसलें सबसे ज्यादा फायदेमंद हैं? हिंदी में बताएं।' },
-    { label: '🌦️ मानसून खेती', text: 'मानसून के मौसम में खेती के टिप्स दें। हिंदी में बताएं।' },
   ],
   gu: [
     { label: '🌾 માટી માટે શ્રેષ્ઠ પાક', text: 'ચીકણી માટી માટે શ્રેષ્ઠ પાક કયા છે? ગુજરાતીમાં જવાબ આપો.' },
     { label: '🐛 જંતુ નિયંત્રણ', text: 'કુદરતી રીતે પાકને જીવાતથી કેવી રીતે બચાવવો? ગુજરાતીમાં જવાબ આપો.' },
     { label: '💧 પાણી બચાવવાના સૂચનો', text: 'ખેતરમાં સિંચાઈ કરતી વખતે પાણી કેવી રીતે બચાવવું? ગુજરાતીમાં જવાબ આપો.' },
-    { label: '🌱 જમીનની તંદુરસ્તી', text: 'જૈવિક રીતે જમીનની તંદુરસ્તી કેવી રીતે સુધારવી? ગુજરાતીમાં જવાબ આપો.' },
-    { label: '💰 નફાકારક પાક 2025', text: '2025 માં સૌથી વધુ નફાકારક પાક કયા છે? ગુજરાતીમાં જવાબ આપો.' },
-    { label: '🌦️ ચોમાસુ ખેતી', text: 'ચોમાસાની ઋતુમાં ખેતીની ટીપ્સ આપો. ગુજરાતીમાં જવાბ આપો.' },
   ],
 };
 
@@ -57,25 +51,21 @@ function MessageBubble({ message, index }) {
   const isUser = message.role === 'user';
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.35, delay: index * 0.03, ease: 'easeOut' }}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: index * 0.02 }}
       className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}
     >
       {!isUser && (
-        <motion.div
-          animate={{ rotate: [0, 5, -5, 0] }}
-          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-          className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-1 shadow-md"
-        >
-          <Bot className="w-4 h-4 text-primary-foreground" />
-        </motion.div>
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center flex-shrink-0 mt-1 shadow-md text-white border border-emerald-400/30">
+          <Bot className="w-5 h-5" />
+        </div>
       )}
-      <div className={`max-w-[80%] ${isUser ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
-        <div className={`rounded-2xl px-4 py-3 shadow-sm ${
+      <div className={`max-w-[85%] ${isUser ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
+        <div className={`rounded-2xl px-4 py-3 shadow-lg ${
           isUser
-            ? 'bg-primary text-primary-foreground rounded-br-sm'
-            : 'bg-card border border-border rounded-bl-sm'
+            ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-medium'
+            : 'bg-slate-900/95 border border-slate-700 text-slate-100'
         }`}>
           {isUser ? (
             <p className="text-sm leading-relaxed">{message.content}</p>
@@ -83,54 +73,62 @@ function MessageBubble({ message, index }) {
             <ReactMarkdown
               className="text-sm leading-relaxed prose prose-sm max-w-none dark:prose-invert
                 [&>p]:my-1 [&>ul]:my-1 [&>ol]:my-1 [&>li]:my-0.5 [&>h3]:text-sm [&>h3]:font-bold
-                [&>strong]:text-foreground [&>p]:text-foreground [&>li]:text-foreground"
+                [&>strong]:text-amber-300 [&>p]:text-slate-100 [&>li]:text-slate-200"
             >
               {message.content}
             </ReactMarkdown>
           )}
         </div>
       </div>
-      {isUser && (
-        <div className="w-8 h-8 rounded-full bg-secondary/20 border border-border flex items-center justify-center flex-shrink-0 mt-1">
-          <User className="w-4 h-4 text-secondary-foreground" />
-        </div>
-      )}
     </motion.div>
   );
 }
 
 function TypingIndicator() {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 10 }}
-      className="flex gap-3 justify-start"
-    >
-      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0 shadow-md">
-        <Bot className="w-4 h-4 text-primary-foreground" />
+    <div className="flex gap-3 items-center">
+      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white shadow-md">
+        <Bot className="w-5 h-5" />
       </div>
-      <div className="bg-card border border-border rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-1.5">
+      <div className="bg-slate-900 border border-slate-700 rounded-2xl px-4 py-3 flex gap-1.5 items-center">
         {[0, 1, 2].map((i) => (
           <motion.div
             key={i}
-            className="w-2 h-2 rounded-full bg-primary"
-            animate={{ y: [0, -6, 0], opacity: [0.4, 1, 0.4] }}
-            transition={{ delay: i * 0.18, duration: 0.7, repeat: Infinity }}
+            animate={{ y: [0, -6, 0] }}
+            transition={{ delay: i * 0.15, duration: 0.5, repeat: Infinity }}
+            className="w-2 h-2 rounded-full bg-emerald-400"
           />
         ))}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
 export default function ChatBot() {
-  const [lang, setLang] = useState('en');
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [lang, setLang] = useState('en');
   const bottomRef = useRef(null);
+
+  const initConversation = async (language = 'en') => {
+    try {
+      const convs = await agroApi.chat.conversations();
+      if (convs && convs.length > 0) {
+        const latest = convs[0];
+        const history = await agroApi.chat.history(latest.id);
+        if (history && history.length > 0) {
+          setMessages(history);
+          return;
+        }
+      }
+    } catch {
+      // fallback to welcome message
+    }
+
+    setMessages([{ role: 'assistant', content: WELCOME_MESSAGES[language] }]);
+  };
 
   useEffect(() => {
     initConversation(lang);
@@ -140,31 +138,42 @@ export default function ChatBot() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  const initConversation = async (selectedLang) => {
-    setMessages([{ role: 'assistant', content: WELCOME_MESSAGES[selectedLang] }]);
-  };
-
-  const handleLangChange = async (newLang) => {
+  const handleLangChange = (newLang) => {
     setLang(newLang);
-    setMessages([]);
-    setInput('');
-    await initConversation(newLang);
+    if (messages.length <= 1) {
+      setMessages([{ role: 'assistant', content: WELCOME_MESSAGES[newLang] }]);
+    }
   };
 
-  const sendMessage = async (text) => {
-    const msg = text || input.trim();
-    if (!msg || isLoading) return;
-    setInput('');
+  const sendMessage = async (overrideText) => {
+    const textToSend = overrideText || input;
+    if (!textToSend.trim() || isLoading) return;
+
+    const userMsg = { role: 'user', content: textToSend };
+    setMessages((prev) => [...prev, userMsg]);
+    if (!overrideText) setInput('');
     setIsLoading(true);
     setIsTyping(true);
-    setMessages((prev) => [...prev, { role: 'user', content: msg }]);
+
     try {
-      const response = await agroApi.chat({ message: msg, language: lang });
-      setMessages((prev) => [...prev, { role: 'assistant', content: response.answer }]);
-    } catch (error) {
-      setMessages((prev) => [...prev, { role: 'assistant', content: `Sorry, I could not answer right now. ${error.message}` }]);
-    } finally {
+      const response = await agroApi.chat.sendMessage({
+        message: textToSend,
+        language: lang,
+      });
+
       setIsTyping(false);
+      const assistantMsg = {
+        role: 'assistant',
+        content: response.answer || response.response || response.message || 'I am ready to help you with your farm!',
+      };
+      setMessages((prev) => [...prev, assistantMsg]);
+    } catch {
+      setIsTyping(false);
+      setMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: 'Apologies, I encountered a connection issue. Please try again!' },
+      ]);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -176,84 +185,75 @@ export default function ChatBot() {
 
   return (
     <PageTransition>
-      <div className="flex flex-col h-[calc(100vh-8rem)] lg:h-[calc(100vh-4rem)]">
-        {/* Header */}
+      <div className="flex flex-col h-[calc(100vh-17rem)] sm:h-[calc(100vh-18rem)] min-h-[480px] pt-6 sm:pt-8">
+        
+        {/* Header with clear offset below navbar */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-4 flex items-center justify-between gap-3 flex-wrap"
         >
           <div className="flex items-center gap-3">
-            <motion.div
-              animate={{ rotate: [0, 10, -10, 0] }}
-              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-              className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/30"
-            >
-              <Bot className="w-5 h-5 text-primary-foreground" />
-            </motion.div>
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-lg text-white border border-emerald-400/30">
+              <Bot className="w-6 h-6" />
+            </div>
             <div>
-              <h1 className="font-heading text-2xl font-bold text-foreground">Kisan AI</h1>
-              <div className="flex items-center gap-1.5">
-                <motion.div
-                  animate={{ scale: [1, 1.3, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="w-2 h-2 rounded-full bg-green-500"
-                />
-                <span className="text-xs text-muted-foreground">Your farming assistant is online</span>
+              <div className="flex items-center gap-2">
+                <h1 className="font-heading text-2xl font-extrabold text-white">Kisan AI Assistant</h1>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-amber-400" /> ONLINE
+                </span>
               </div>
+              <p className="text-xs text-slate-300">Ask any crop, soil, weather or market pricing question</p>
             </div>
           </div>
 
-          {/* Language selector + reset */}
+          {/* Language Selector + Reset Button */}
           <div className="flex items-center gap-2">
-            <Languages className="w-4 h-4 text-muted-foreground" />
-            <div className="flex rounded-xl border border-border overflow-hidden bg-card">
+            <Languages className="w-4 h-4 text-emerald-400" />
+            <div className="flex rounded-xl border border-slate-700 overflow-hidden bg-slate-900">
               {LANGUAGES.map((l) => (
-                <motion.button
+                <button
                   key={l.code}
-                  whileTap={{ scale: 0.95 }}
                   onClick={() => handleLangChange(l.code)}
-                  className={`px-3 py-1.5 text-xs font-medium transition-all duration-200 flex items-center gap-1 ${
+                  className={`px-3 py-1.5 text-xs font-bold transition-all flex items-center gap-1 ${
                     lang === l.code
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                      ? 'bg-emerald-500 text-white'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                   }`}
                 >
                   <span>{l.flag}</span>
                   <span>{l.label}</span>
-                </motion.button>
+                </button>
               ))}
             </div>
-            <Button variant="ghost" size="icon" onClick={resetChat} className="rounded-full h-8 w-8">
-              <RefreshCw className="w-3.5 h-3.5" />
+            <Button variant="ghost" size="icon" onClick={resetChat} className="rounded-xl h-9 w-9 text-slate-300 hover:bg-slate-800 hover:text-white">
+              <RefreshCw className="w-4 h-4" />
             </Button>
           </div>
         </motion.div>
 
-        {/* Quick prompts */}
+        {/* Quick Prompts */}
         <motion.div
           key={lang}
           initial={{ opacity: 0, y: 5 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="flex gap-2 flex-wrap mb-4"
+          className="flex gap-2 flex-wrap mb-3"
         >
-          {QUICK_PROMPTS[lang].map((q) => (
-            <motion.button
+          {QUICK_PROMPTS[lang]?.map((q) => (
+            <button
               key={q.label}
-              whileHover={{ scale: 1.03, y: -1 }}
-              whileTap={{ scale: 0.97 }}
               onClick={() => sendMessage(q.text)}
               disabled={isLoading}
-              className="text-xs px-3 py-1.5 rounded-full bg-card border border-border text-foreground hover:border-primary hover:bg-accent transition-all duration-200 cursor-pointer disabled:opacity-50"
+              className="text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-900/90 border border-slate-700 text-slate-200 hover:border-emerald-400 hover:bg-emerald-500/10 transition-all cursor-pointer disabled:opacity-50"
             >
               {q.label}
-            </motion.button>
+            </button>
           ))}
         </motion.div>
 
-        {/* Messages */}
-        <Card className="flex-1 overflow-y-auto p-4 space-y-4 border-border/50 bg-card/60 backdrop-blur-sm">
+        {/* Chat History Box */}
+        <Card className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 bg-slate-950/80 backdrop-blur-xl border border-slate-800 rounded-3xl shadow-2xl">
           <AnimatePresence mode="wait">
             {messages.map((msg, i) => (
               <MessageBubble key={`${lang}-${i}`} message={msg} index={i} />
@@ -265,11 +265,10 @@ export default function ChatBot() {
           <div ref={bottomRef} />
         </Card>
 
-        {/* Input */}
+        {/* Input Bar */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
           className="mt-4 flex gap-3"
         >
           <Input
@@ -277,23 +276,21 @@ export default function ChatBot() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
             placeholder={PLACEHOLDERS[lang]}
-            className="flex-1 h-12 rounded-xl border-border/60 bg-card"
+            className="flex-1 h-13 rounded-2xl border-slate-700 bg-slate-900/90 text-white placeholder:text-slate-400 focus:border-emerald-400 font-medium text-sm shadow-xl"
             disabled={isLoading}
           />
-          <motion.div whileTap={{ scale: 0.9 }}>
-            <Button
-              onClick={() => sendMessage()}
-              disabled={isLoading || !input.trim()}
-              className="h-12 w-12 rounded-xl bg-primary shadow-lg shadow-primary/30"
-              size="icon"
-            >
-              {isLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <Send className="w-5 h-5" />
-              )}
-            </Button>
-          </motion.div>
+          <Button
+            onClick={() => sendMessage()}
+            disabled={isLoading || !input.trim()}
+            className="h-13 w-13 btn-luxury rounded-2xl shadow-xl flex-shrink-0"
+            size="icon"
+          >
+            {isLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin text-white" />
+            ) : (
+              <Send className="w-5 h-5" />
+            )}
+          </Button>
         </motion.div>
       </div>
     </PageTransition>

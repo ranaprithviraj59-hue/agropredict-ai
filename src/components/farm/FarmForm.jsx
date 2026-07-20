@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { Save, X, Navigation, Sparkles } from 'lucide-react';
+import { Save, X, Navigation, Sparkles, Thermometer, Droplets, CloudRain, FlaskConical } from 'lucide-react';
 import { toast } from 'sonner';
 
 const SOIL_TYPES = ['clay', 'sandy', 'loamy', 'silty', 'peaty', 'chalky', 'laterite', 'black_cotton', 'red_soil', 'alluvial'];
@@ -32,7 +32,14 @@ export default function FarmForm({ farm, onSubmit, onCancel, isLoading }) {
     water_availability: '',
     climate_zone: '',
     irrigation_type: '',
-    soil_ph: 7,
+    n_level: '90',
+    p_level: '42',
+    k_level: '43',
+    temperature: '25.5',
+    humidity: '71.5',
+    ph: '6.5',
+    soil_ph: 6.5,
+    rainfall: '202.9',
     organic_matter_percent: '',
     previous_crop: '',
     farming_experience_years: '',
@@ -55,7 +62,14 @@ export default function FarmForm({ farm, onSubmit, onCancel, isLoading }) {
         water_availability: farm.water_availability || '',
         climate_zone: farm.climate_zone || '',
         irrigation_type: farm.irrigation_type || '',
-        soil_ph: farm.soil_ph || 7,
+        n_level: farm.n_level !== null && farm.n_level !== undefined ? String(farm.n_level) : '90',
+        p_level: farm.p_level !== null && farm.p_level !== undefined ? String(farm.p_level) : '42',
+        k_level: farm.k_level !== null && farm.k_level !== undefined ? String(farm.k_level) : '43',
+        temperature: farm.temperature !== null && farm.temperature !== undefined ? String(farm.temperature) : '25.5',
+        humidity: farm.humidity !== null && farm.humidity !== undefined ? String(farm.humidity) : '71.5',
+        ph: farm.ph !== null && farm.ph !== undefined ? String(farm.ph) : String(farm.soil_ph || 6.5),
+        soil_ph: farm.soil_ph || farm.ph || 6.5,
+        rainfall: farm.rainfall !== null && farm.rainfall !== undefined ? String(farm.rainfall) : '202.9',
         organic_matter_percent: farm.organic_matter_percent || '',
         previous_crop: farm.previous_crop || '',
         farming_experience_years: farm.farming_experience_years || '',
@@ -88,40 +102,26 @@ export default function FarmForm({ farm, onSubmit, onCancel, isLoading }) {
         region: profile.region || f.region,
         climate_zone: profile.climate_zone || f.climate_zone,
         soil_type: f.soil_type || profile.soil_types?.[0] || '',
-        water_source: f.water_source || profile.water_sources?.[0] || '',
         water_availability: f.water_availability || profile.water_availability || '',
-        location: [city, district, state].filter(Boolean).join(', '),
+        city,
+        district,
+        state,
       };
     });
   };
 
   const handleStateChange = (state) => {
-    const profile = locationKnowledge?.stateProfiles?.[state];
-    applyLocationSuggestion(profile, { state, district: '', city: '' });
+    const nextStateProfile = locationKnowledge?.stateProfiles?.[state];
+    applyLocationSuggestion(nextStateProfile, { state, district: '', city: '' });
   };
 
   const handleDistrictChange = (district) => {
-    const profile = locationKnowledge?.districtProfiles?.[form.state]?.[district] || stateProfile;
-    applyLocationSuggestion(profile, { district, city: '' });
+    const nextDistrictProfile = locationKnowledge?.districtProfiles?.[form.state]?.[district];
+    applyLocationSuggestion(nextDistrictProfile || stateProfile, { district, city: '' });
   };
 
   const handleCityChange = (city) => {
-    applyLocationSuggestion(activeProfile, { city });
-  };
-
-  const inferFromCoordinates = (latitude, longitude) => {
-    const nearest = locationKnowledge?.coordinateProfiles
-      ?.map((profile) => ({
-        ...profile,
-        distance: (Number(latitude) - Number(profile.latitude)) ** 2 + (Number(longitude) - Number(profile.longitude)) ** 2,
-      }))
-      .sort((a, b) => a.distance - b.distance)[0];
-
-    if (!nearest) return null;
-
-    const profile = locationKnowledge?.districtProfiles?.[nearest.state]?.[nearest.district]
-      || locationKnowledge?.stateProfiles?.[nearest.state];
-    return { nearest, profile };
+    setForm((f) => ({ ...f, city }));
   };
 
   const detectLocation = () => {
@@ -131,81 +131,61 @@ export default function FarmForm({ farm, onSubmit, onCancel, isLoading }) {
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const latitude = pos.coords.latitude;
-        const longitude = pos.coords.longitude;
-        const inferred = inferFromCoordinates(latitude, longitude);
-
-        if (inferred?.profile) {
-          applyLocationSuggestion(inferred.profile, {
-            state: inferred.nearest.state,
-            district: inferred.nearest.district,
-            city: inferred.nearest.district,
-            latitude,
-            longitude,
-          });
-          toast.success(`Location detected near ${inferred.nearest.district}, ${inferred.nearest.state}`);
-          return;
-        }
-
-        setForm((f) => ({
-          ...f,
-          latitude,
-          longitude,
-          location: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
-        }));
-        toast.success('Coordinates detected. Select state/district for soil suggestions.');
+        const { latitude, longitude } = pos.coords;
+        setForm((f) => ({ ...f, latitude, longitude, location: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` }));
+        toast.success('Location coordinates captured!');
       },
-      (error) => {
-        const message = error.code === 1
-          ? 'Location permission denied. Allow location access in browser settings or enter state/district manually.'
-          : 'Unable to detect location. Enter state/district manually.';
-        toast.error(message);
-      },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+      () => toast.error('Unable to fetch location')
     );
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.farm_name || !form.soil_type || !form.water_source || !form.water_availability) {
-      toast.error('Please fill all required fields');
+      toast.error('Please fill required fields (Farm Name, Soil Type, Water Source, Water Availability)');
       return;
     }
-    const data = { ...form };
-    if (data.farm_size_acres) data.farm_size_acres = Number(data.farm_size_acres);
-    if (data.organic_matter_percent) data.organic_matter_percent = Number(data.organic_matter_percent);
-    if (data.farming_experience_years) data.farming_experience_years = Number(data.farming_experience_years);
-    onSubmit(data);
+    onSubmit({
+      ...form,
+      soil_ph: Number(form.ph || form.soil_ph || 7),
+      ph: Number(form.ph || form.soil_ph || 7),
+      n_level: form.n_level !== '' ? Number(form.n_level) : null,
+      p_level: form.p_level !== '' ? Number(form.p_level) : null,
+      k_level: form.k_level !== '' ? Number(form.k_level) : null,
+      temperature: form.temperature !== '' ? Number(form.temperature) : null,
+      humidity: form.humidity !== '' ? Number(form.humidity) : null,
+      rainfall: form.rainfall !== '' ? Number(form.rainfall) : null,
+    });
   };
 
   const update = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
   return (
-    <Card className="p-6 border-primary/20 shadow-lg">
+    <Card className="p-6 sm:p-8 bg-slate-900/95 border-slate-700/80 shadow-2xl text-slate-100 rounded-3xl">
       <form onSubmit={handleSubmit} className="space-y-6">
-        <h3 className="font-heading text-xl font-bold">{farm ? 'Edit Farm' : 'Add New Farm'}</h3>
+        <h3 className="font-heading text-2xl font-extrabold text-white">{farm ? 'Edit Farm Telemetry' : 'Add New Farm Telemetry'}</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>Farm Name *</Label>
-            <Input value={form.farm_name} onChange={(e) => update('farm_name', e.target.value)} placeholder="My Farm" />
+            <Label className="text-xs font-bold uppercase text-slate-200">Farm Name *</Label>
+            <Input value={form.farm_name} onChange={(e) => update('farm_name', e.target.value)} placeholder="e.g. Green Valley Farm" className="bg-slate-950 border-slate-700 text-white font-bold h-12 rounded-xl" />
           </div>
 
           <div className="space-y-2">
-            <Label>Location</Label>
+            <Label className="text-xs font-bold uppercase text-slate-200">Location</Label>
             <div className="flex gap-2">
-              <Input value={form.location} onChange={(e) => update('location', e.target.value)} placeholder="City, State" className="flex-1" />
-              <Button type="button" variant="outline" onClick={detectLocation} className="flex-shrink-0">
-                <Navigation className="w-4 h-4" />
+              <Input value={form.location} onChange={(e) => update('location', e.target.value)} placeholder="City, State" className="flex-1 bg-slate-950 border-slate-700 text-white font-bold h-12 rounded-xl" />
+              <Button type="button" variant="outline" onClick={detectLocation} className="flex-shrink-0 bg-slate-800 border-slate-700 text-slate-200 hover:text-white h-12 rounded-xl">
+                <Navigation className="w-4 h-4 text-emerald-400" />
               </Button>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label>State / Union Territory</Label>
+            <Label className="text-xs font-bold uppercase text-slate-200">State / Union Territory</Label>
             <Select value={form.state} onValueChange={handleStateChange}>
-              <SelectTrigger><SelectValue placeholder="Select state..." /></SelectTrigger>
-              <SelectContent>
+              <SelectTrigger className="bg-slate-950 border-slate-700 text-white font-bold h-12 rounded-xl"><SelectValue placeholder="Select state..." /></SelectTrigger>
+              <SelectContent className="bg-slate-950 border-slate-700 text-white rounded-xl">
                 {locationKnowledge?.states?.map((state) => (
                   <SelectItem key={state} value={state}>{state}</SelectItem>
                 ))}
@@ -214,67 +194,144 @@ export default function FarmForm({ farm, onSubmit, onCancel, isLoading }) {
           </div>
 
           <div className="space-y-2">
-            <Label>District</Label>
+            <Label className="text-xs font-bold uppercase text-slate-200">District</Label>
             <Select value={form.district} onValueChange={handleDistrictChange} disabled={!form.state || districts.length === 0}>
-              <SelectTrigger><SelectValue placeholder={districts.length ? 'Select district...' : 'Use custom location'} /></SelectTrigger>
-              <SelectContent>
+              <SelectTrigger className="bg-slate-950 border-slate-700 text-white font-bold h-12 rounded-xl"><SelectValue placeholder={districts.length ? 'Select district...' : 'Use custom location'} /></SelectTrigger>
+              <SelectContent className="bg-slate-950 border-slate-700 text-white rounded-xl">
                 {districts.map((district) => (
                   <SelectItem key={district} value={district}>{district}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
+        </div>
 
-          <div className="space-y-2">
-            <Label>City / Village</Label>
-            <div className="flex gap-2">
+        {/* CORE ML CROP MODEL PARAMETERS SECTION (N, P, K, Temperature, Humidity, pH, Rainfall) */}
+        <div className="rounded-3xl border border-slate-800 bg-slate-950/90 p-6 space-y-4 shadow-xl">
+          <div className="flex items-center gap-2 text-emerald-400">
+            <FlaskConical className="w-5 h-5 text-emerald-400" />
+            <h4 className="font-heading text-base font-extrabold uppercase tracking-wide text-white">
+              ML Crop Model Parameters (N, P, K, Temperature, Humidity, pH, Rainfall)
+            </h4>
+          </div>
+          <p className="text-xs text-slate-300 font-medium">
+            These 7 telemetry values power high-accuracy Machine Learning crop suitability predictions.
+          </p>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 pt-2">
+            {/* N */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-slate-300">N (Nitrogen)</Label>
               <Input
-                value={form.city}
-                onChange={(e) => handleCityChange(e.target.value)}
-                placeholder={cities.length ? `e.g. ${cities.slice(0, 2).join(', ')}` : 'Enter village or city'}
-                list="city-suggestions"
-                className="flex-1"
+                type="number"
+                value={form.n_level}
+                onChange={(e) => update('n_level', e.target.value)}
+                placeholder="90"
+                className="bg-slate-900 border-slate-700 text-white font-mono font-bold h-11 rounded-xl focus:border-emerald-400"
               />
-              <datalist id="city-suggestions">
-                {cities.map((city) => <option key={city} value={city} />)}
-              </datalist>
+              <span className="text-[10px] text-slate-400 font-mono">mg/kg</span>
+            </div>
+
+            {/* P */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-slate-300">P (Phosphorus)</Label>
+              <Input
+                type="number"
+                value={form.p_level}
+                onChange={(e) => update('p_level', e.target.value)}
+                placeholder="42"
+                className="bg-slate-900 border-slate-700 text-white font-mono font-bold h-11 rounded-xl focus:border-emerald-400"
+              />
+              <span className="text-[10px] text-slate-400 font-mono">mg/kg</span>
+            </div>
+
+            {/* K */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-slate-300">K (Potassium)</Label>
+              <Input
+                type="number"
+                value={form.k_level}
+                onChange={(e) => update('k_level', e.target.value)}
+                placeholder="43"
+                className="bg-slate-900 border-slate-700 text-white font-mono font-bold h-11 rounded-xl focus:border-emerald-400"
+              />
+              <span className="text-[10px] text-slate-400 font-mono">mg/kg</span>
+            </div>
+
+            {/* Temperature */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-slate-300 flex items-center gap-1">
+                <Thermometer className="w-3 h-3 text-slate-400" /> Temp
+              </Label>
+              <Input
+                type="number"
+                step="0.1"
+                value={form.temperature}
+                onChange={(e) => update('temperature', e.target.value)}
+                placeholder="25.5"
+                className="bg-slate-900 border-slate-700 text-white font-mono font-bold h-11 rounded-xl focus:border-emerald-400"
+              />
+              <span className="text-[10px] text-slate-400 font-mono">°C</span>
+            </div>
+
+            {/* Humidity */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-slate-300 flex items-center gap-1">
+                <Droplets className="w-3 h-3 text-slate-400" /> Humidity
+              </Label>
+              <Input
+                type="number"
+                step="0.1"
+                value={form.humidity}
+                onChange={(e) => update('humidity', e.target.value)}
+                placeholder="71.5"
+                className="bg-slate-900 border-slate-700 text-white font-mono font-bold h-11 rounded-xl focus:border-emerald-400"
+              />
+              <span className="text-[10px] text-slate-400 font-mono">%</span>
+            </div>
+
+            {/* pH */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-slate-300">pH</Label>
+              <Input
+                type="number"
+                step="0.1"
+                value={form.ph}
+                onChange={(e) => {
+                  update('ph', e.target.value);
+                  update('soil_ph', Number(e.target.value) || 6.5);
+                }}
+                placeholder="6.5"
+                className="bg-slate-900 border-slate-700 text-white font-mono font-bold h-11 rounded-xl focus:border-emerald-400"
+              />
+              <span className="text-[10px] text-slate-400 font-mono">0 - 14</span>
+            </div>
+
+            {/* Rainfall */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-slate-300 flex items-center gap-1">
+                <CloudRain className="w-3 h-3 text-slate-400" /> Rainfall
+              </Label>
+              <Input
+                type="number"
+                step="0.1"
+                value={form.rainfall}
+                onChange={(e) => update('rainfall', e.target.value)}
+                placeholder="202.9"
+                className="bg-slate-900 border-slate-700 text-white font-mono font-bold h-11 rounded-xl focus:border-emerald-400"
+              />
+              <span className="text-[10px] text-slate-400 font-mono">mm</span>
             </div>
           </div>
+        </div>
 
+        {/* Additional Soil & Farm Properties */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label>Agro Region</Label>
-            <Input value={form.region} onChange={(e) => update('region', e.target.value)} placeholder="Auto suggested region" />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Farm Size (acres)</Label>
-            <Input type="number" value={form.farm_size_acres} onChange={(e) => update('farm_size_acres', e.target.value)} placeholder="10" />
-          </div>
-
-          {activeProfile && (
-            <div className="md:col-span-2 rounded-xl border border-primary/20 bg-primary/5 p-4">
-              <div className="flex items-start gap-3">
-                <Sparkles className="w-5 h-5 text-primary mt-0.5" />
-                <div className="space-y-2">
-                  <p className="text-sm font-semibold text-foreground">Auto suggestion for this region</p>
-                  <p className="text-xs text-muted-foreground">
-                    Common soils: {activeProfile.soil_types?.map((s) => s.replace(/_/g, ' ')).join(', ')}.
-                    {' '}Climate: {activeProfile.climate_zone?.replace(/_/g, ' ')}.
-                    {' '}Water: {activeProfile.water_availability}.
-                  </p>
-                  <Button type="button" variant="outline" size="sm" onClick={() => applyLocationSuggestion(activeProfile)}>
-                    Apply Suggested Soil, Climate and Water
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <Label>Soil Type *</Label>
+            <Label className="text-xs font-bold uppercase text-slate-200">Soil Type *</Label>
             <Select value={form.soil_type} onValueChange={(v) => update('soil_type', v)}>
-              <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-              <SelectContent>
+              <SelectTrigger className="bg-slate-950 border-slate-700 text-white font-bold h-12 rounded-xl"><SelectValue placeholder="Select..." /></SelectTrigger>
+              <SelectContent className="bg-slate-950 border-slate-700 text-white rounded-xl">
                 {SOIL_TYPES.map((t) => (
                   <SelectItem key={t} value={t}>{t.replace(/_/g, ' ')}</SelectItem>
                 ))}
@@ -283,10 +340,10 @@ export default function FarmForm({ farm, onSubmit, onCancel, isLoading }) {
           </div>
 
           <div className="space-y-2">
-            <Label>Water Source *</Label>
+            <Label className="text-xs font-bold uppercase text-slate-200">Water Source *</Label>
             <Select value={form.water_source} onValueChange={(v) => update('water_source', v)}>
-              <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-              <SelectContent>
+              <SelectTrigger className="bg-slate-950 border-slate-700 text-white font-bold h-12 rounded-xl"><SelectValue placeholder="Select..." /></SelectTrigger>
+              <SelectContent className="bg-slate-950 border-slate-700 text-white rounded-xl">
                 {WATER_SOURCES.map((t) => (
                   <SelectItem key={t} value={t}>{t.replace(/_/g, ' ')}</SelectItem>
                 ))}
@@ -295,77 +352,26 @@ export default function FarmForm({ farm, onSubmit, onCancel, isLoading }) {
           </div>
 
           <div className="space-y-2">
-            <Label>Water Availability *</Label>
+            <Label className="text-xs font-bold uppercase text-slate-200">Water Availability *</Label>
             <Select value={form.water_availability} onValueChange={(v) => update('water_availability', v)}>
-              <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-              <SelectContent>
+              <SelectTrigger className="bg-slate-950 border-slate-700 text-white font-bold h-12 rounded-xl"><SelectValue placeholder="Select..." /></SelectTrigger>
+              <SelectContent className="bg-slate-950 border-slate-700 text-white rounded-xl">
                 {WATER_AVAILABILITY.map((t) => (
                   <SelectItem key={t} value={t}>{t}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-
-          <div className="space-y-2">
-            <Label>Climate Zone</Label>
-            <Select value={form.climate_zone} onValueChange={(v) => update('climate_zone', v)}>
-              <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-              <SelectContent>
-                {CLIMATE_ZONES.map((t) => (
-                  <SelectItem key={t} value={t}>{t.replace(/_/g, ' ')}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Irrigation Type</Label>
-            <Select value={form.irrigation_type} onValueChange={(v) => update('irrigation_type', v)}>
-              <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-              <SelectContent>
-                {IRRIGATION_TYPES.map((t) => (
-                  <SelectItem key={t} value={t}>{t.replace(/_/g, ' ')}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Soil pH: {form.soil_ph}</Label>
-            <Slider
-              value={[form.soil_ph]}
-              onValueChange={([v]) => update('soil_ph', v)}
-              min={0}
-              max={14}
-              step={0.5}
-              className="mt-3"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Organic Matter (%)</Label>
-            <Input type="number" value={form.organic_matter_percent} onChange={(e) => update('organic_matter_percent', e.target.value)} placeholder="2.5" />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Previous Crop</Label>
-            <Input value={form.previous_crop} onChange={(e) => update('previous_crop', e.target.value)} placeholder="Rice, Wheat..." />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Farming Experience (years)</Label>
-            <Input type="number" value={form.farming_experience_years} onChange={(e) => update('farming_experience_years', e.target.value)} placeholder="5" />
-          </div>
         </div>
 
-        <div className="flex justify-end gap-3 pt-2">
-          <Button type="button" variant="outline" onClick={onCancel}>
+        <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+          <Button type="button" variant="outline" onClick={onCancel} className="bg-slate-800 border-slate-700 text-slate-300 hover:text-white rounded-xl h-12 px-6">
             <X className="w-4 h-4 mr-2" />
             Cancel
           </Button>
-          <Button type="submit" disabled={isLoading} className="bg-primary">
+          <Button type="submit" disabled={isLoading} className="btn-luxury rounded-xl h-12 px-8 font-extrabold text-base">
             <Save className="w-4 h-4 mr-2" />
-            {farm ? 'Update Farm' : 'Save Farm'}
+            {farm ? 'Update Farm Telemetry' : 'Save Farm Telemetry'}
           </Button>
         </div>
       </form>

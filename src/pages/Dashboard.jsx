@@ -28,13 +28,18 @@ export default function Dashboard() {
   return (
     <PageTransition>
       <div className="space-y-8">
+        {/* Full-Page Cinematic Farm Background Hero */}
         <WelcomeHero userName={user?.full_name?.split(' ')[0]} />
+        
+        {/* 4 Clean Quick Stat Cards */}
         <QuickStats
           farmCount={farms.length}
           predictionCount={predictions.length}
           topCrop={topCrop}
           currentSeason="Rabi"
         />
+
+        {/* 4 Clean Agronomy Tips */}
         <FarmingTips />
       </div>
     </PageTransition>
