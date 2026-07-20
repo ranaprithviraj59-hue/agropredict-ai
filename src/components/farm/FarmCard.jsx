@@ -54,6 +54,7 @@ export default function FarmCard({ farm, index, onEdit, onDelete }) {
         <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
           <div>Water: {farm.water_source?.replace(/_/g, ' ')}</div>
           {farm.climate_zone && <div>Climate: {farm.climate_zone?.replace(/_/g, ' ')}</div>}
+          {farm.region && <div>Region: {farm.region?.replace(/_/g, ' ')}</div>}
           {farm.irrigation_type && <div>Irrigation: {farm.irrigation_type?.replace(/_/g, ' ')}</div>}
           {farm.soil_ph && <div>pH: {farm.soil_ph}</div>}
         </div>

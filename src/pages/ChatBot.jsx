@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { base44 } from '@/api/base44Client';
+import { agroApi } from '@/api/agroApi';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageTransition from '@/components/shared/PageTransition';
 import { Button } from '@/components/ui/button';
@@ -126,7 +126,6 @@ function TypingIndicator() {
 
 export default function ChatBot() {
   const [lang, setLang] = useState('en');
-  const [conversation, setConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -142,55 +141,38 @@ export default function ChatBot() {
   }, [messages, isTyping]);
 
   const initConversation = async (selectedLang) => {
-    const conv = await base44.agents.createConversation({
-      agent_name: 'farming_assistant',
-      metadata: { name: 'Kisan AI Chat' },
-    });
-    setConversation(conv);
     setMessages([{ role: 'assistant', content: WELCOME_MESSAGES[selectedLang] }]);
-
-    base44.agents.subscribeToConversation(conv.id, (data) => {
-      const msgs = data.messages || [];
-      setMessages([
-        { role: 'assistant', content: WELCOME_MESSAGES[selectedLang] },
-        ...msgs,
-      ]);
-      setIsTyping(false);
-      setIsLoading(false);
-    });
   };
 
   const handleLangChange = async (newLang) => {
     setLang(newLang);
     setMessages([]);
-    setConversation(null);
     setInput('');
     await initConversation(newLang);
   };
 
   const sendMessage = async (text) => {
     const msg = text || input.trim();
-    if (!msg || isLoading || !conversation) return;
-    // Append language instruction so AI responds in chosen language
-    const langInstruction = lang === 'hi'
-      ? ' (कृपया हिंदी में जवाब दें)'
-      : lang === 'gu'
-      ? ' (કૃપા કરીને ગુજરાતીમાં જવાબ આપો)'
-      : '';
+    if (!msg || isLoading) return;
     setInput('');
     setIsLoading(true);
     setIsTyping(true);
     setMessages((prev) => [...prev, { role: 'user', content: msg }]);
-    await base44.agents.addMessage(conversation, { role: 'user', content: msg + langInstruction });
+    try {
+      const response = await agroApi.chat({ message: msg, language: lang });
+      setMessages((prev) => [...prev, { role: 'assistant', content: response.answer }]);
+    } catch (error) {
+      setMessages((prev) => [...prev, { role: 'assistant', content: `Sorry, I could not answer right now. ${error.message}` }]);
+    } finally {
+      setIsTyping(false);
+      setIsLoading(false);
+    }
   };
 
   const resetChat = async () => {
     setMessages([]);
-    setConversation(null);
     await initConversation(lang);
   };
-
-  const currentLang = LANGUAGES.find((l) => l.code === lang);
 
   return (
     <PageTransition>

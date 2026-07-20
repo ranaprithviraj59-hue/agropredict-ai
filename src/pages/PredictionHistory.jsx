@@ -1,4 +1,4 @@
-import { base44 } from '@/api/base44Client';
+import { agroApi } from '@/api/agroApi';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageTransition from '@/components/shared/PageTransition';
@@ -16,7 +16,7 @@ function PredictionItem({ prediction, farms, index }) {
   const farm = farms.find((f) => f.id === prediction.farm_id);
 
   const deleteMutation = useMutation({
-    mutationFn: () => base44.entities.CropPrediction.delete(prediction.id),
+    mutationFn: () => agroApi.cropPredictions.delete(prediction.id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['predictions'] }),
   });
 
@@ -107,12 +107,12 @@ function PredictionItem({ prediction, farms, index }) {
 export default function PredictionHistory() {
   const { data: predictions = [] } = useQuery({
     queryKey: ['predictions'],
-    queryFn: () => base44.entities.CropPrediction.list('-created_date'),
+    queryFn: () => agroApi.cropPredictions.list(),
   });
 
   const { data: farms = [] } = useQuery({
     queryKey: ['farms'],
-    queryFn: () => base44.entities.Farm.list(),
+    queryFn: () => agroApi.farms.list(),
   });
 
   return (

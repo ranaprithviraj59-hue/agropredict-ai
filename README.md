@@ -1,39 +1,51 @@
-**Welcome to your Base44 project** 
+# AgroPredict AI
 
-**About**
+AgroPredict AI is a full-stack final-year project for AI-based crop recommendation, price forecasting, farm management, Kisan AI chat, prediction history, and admin monitoring.
 
-View and Edit  your app on [Base44.com](http://Base44.com) 
+## Tech Stack
 
-This project contains everything you need to run your app locally.
+- React + Vite frontend
+- Node.js backend
+- SQLite database using Node's built-in `node:sqlite`
+- Explainable crop suitability engine
+- Local price forecasting engine
 
-**Edit the code in your local development environment**
+## Run Locally
 
-Any change pushed to the repo will also be reflected in the Base44 Builder.
+Install requirements first. See `REQUIREMENTS.md`.
 
-**Prerequisites:** 
-
-1. Clone the repository using the project's Git URL 
-2. Navigate to the project directory
-3. Install dependencies: `npm install`
-4. Create an `.env.local` file and set the right environment variables
-
-```
-VITE_BASE44_APP_ID=your_app_id
-VITE_BASE44_APP_BASE_URL=your_backend_url
-
-e.g.
-VITE_BASE44_APP_ID=cbef744a8545c389ef439ea6
-VITE_BASE44_APP_BASE_URL=https://my-to-do-list-81bfaad7.base44.app
+```bash
+npm install
+npm run dev
 ```
 
-Run the app: `npm run dev`
+Frontend: `http://127.0.0.1:5173`
 
-**Publish your changes**
+Backend API: `http://127.0.0.1:4000/api/health`
 
-Open [Base44.com](http://Base44.com) and click on Publish.
+Database file: `server/data/agropredict.db`
 
-**Docs & Support**
+## Useful Commands
 
-Documentation: [https://docs.base44.com/Integrations/Using-GitHub](https://docs.base44.com/Integrations/Using-GitHub)
+```bash
+npm test
+npm run lint
+npm run typecheck
+npm run build
+```
 
-Support: [https://app.base44.com/support](https://app.base44.com/support)
+## Share This Project
+
+See `SHARE_INSTRUCTIONS.md`.
+
+Do not share `node_modules`, `dist`, `.env.local`, or generated database files. The receiver should run `npm install` before running the project.
+
+## Project Modules
+
+- Farmer dashboard
+- Farm CRUD
+- Crop prediction based on soil, pH, water, season, climate, irrigation, region, and previous crop
+- Price prediction and revenue forecast
+- Kisan AI farming chat
+- Prediction history
+- Admin panel for backend database records and model logs

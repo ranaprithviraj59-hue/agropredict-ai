@@ -34,7 +34,7 @@ export default function FarmSelector({ farms, selectedFarmId, onSelect }) {
         </SelectTrigger>
         <SelectContent>
           {farms.map((farm) => (
-            <SelectItem key={farm.id} value={farm.id}>
+            <SelectItem key={farm.id} value={String(farm.id)}>
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-primary" />
                 {farm.farm_name} — {farm.soil_type?.replace(/_/g, ' ')}

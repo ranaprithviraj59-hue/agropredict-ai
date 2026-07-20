@@ -1,19 +1,21 @@
 {
-  "name": "base44-app",
+  "name": "agropredict-ai",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node server/dev.js",
+    "dev:web": "vite --host 127.0.0.1 --port 5173",
+    "server": "node server/index.js",
     "build": "vite build",
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p ./jsconfig.json",
+    "test": "node --test server/tests/*.test.js",
+    "share:check": "node server/share-check.js",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@base44/sdk": "^0.8.24",
-    "@base44/vite-plugin": "^1.0.6",
     "@hello-pangea/dnd": "^17.0.0",
     "@hookform/resolvers": "^4.1.2",
     "@radix-ui/react-accordion": "^1.2.3",

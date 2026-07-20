@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { agroApi } from '@/api/agroApi';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageTransition from '@/components/shared/PageTransition';
@@ -15,11 +15,11 @@ export default function MyFarm() {
 
   const { data: farms = [], isLoading } = useQuery({
     queryKey: ['farms'],
-    queryFn: () => base44.entities.Farm.list(),
+    queryFn: () => agroApi.farms.list(),
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Farm.create(data),
+    mutationFn: (data) => agroApi.farms.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['farms'] });
       setShowForm(false);
@@ -27,7 +27,7 @@ export default function MyFarm() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Farm.update(id, data),
+    mutationFn: ({ id, data }) => agroApi.farms.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['farms'] });
       setShowForm(false);
@@ -36,7 +36,7 @@ export default function MyFarm() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Farm.delete(id),
+    mutationFn: (id) => agroApi.farms.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['farms'] }),
   });
 

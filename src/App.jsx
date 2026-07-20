@@ -13,6 +13,8 @@ import MyFarm from '@/pages/MyFarm';
 import PredictionHistory from '@/pages/PredictionHistory';
 import ChatBot from '@/pages/ChatBot';
 import PricePredictor from '@/pages/PricePredictor';
+import AdminPanel from '@/pages/AdminPanel';
+import AdminLogin from '@/pages/AdminLogin';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -43,6 +45,8 @@ const AuthenticatedApp = () => {
         <Route path="/PricePredictor" element={<PricePredictor />} />
         <Route path="/ChatBot" element={<ChatBot />} />
         <Route path="/PredictionHistory" element={<PredictionHistory />} />
+        <Route path="/AdminLogin" element={<AdminLogin />} />
+        <Route path="/AdminPanel" element={<AdminPanel />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

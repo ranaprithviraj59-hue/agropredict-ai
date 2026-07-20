@@ -4,12 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Sprout, MapPin, History,
   Menu, X, LogOut, Leaf, Bot, TrendingUp
+  , ShieldCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { base44 } from '@/api/base44Client';
 import ThemeToggle from '@/components/shared/ThemeToggle';
+import { useAuth } from '@/lib/AuthContext';
 
-const navItems = [
+const baseNavItems = [
   { path: '/Dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/Predict', icon: Sprout, label: 'Predict Crops' },
   { path: '/MyFarm', icon: MapPin, label: 'My Farm' },
@@ -21,8 +22,15 @@ const navItems = [
 export default function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const { user, logout } = useAuth();
+  const navItems = user.role === 'admin'
+    ? [...baseNavItems, { path: '/AdminPanel', icon: ShieldCheck, label: 'Admin Panel' }]
+    : [...baseNavItems, { path: '/AdminLogin', icon: ShieldCheck, label: 'Admin Login' }];
 
-  const handleLogout = () => base44.auth.logout();
+  const handleLogout = () => {
+    logout();
+    window.location.assign('/Dashboard');
+  };
 
   const NavContent = () => (
     <div className="flex flex-col h-full">
@@ -88,7 +96,7 @@ export default function Sidebar() {
           onClick={handleLogout}
         >
           <LogOut className="w-4 h-4" />
-          Logout
+          {user.role === 'admin' ? 'Exit Admin' : 'Logout'}
         </Button>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { agroApi } from '@/api/agroApi';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageTransition from '@/components/shared/PageTransition';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TrendingUp, TrendingDown, Minus, Sparkles, DollarSign, BarChart3, Loader2, Info } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line } from 'recharts';
+import { XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line } from 'recharts';
 import { toast } from 'sonner';
 
 const CROPS = [
@@ -61,57 +61,7 @@ export default function PricePredictor() {
     setIsLoading(true);
     setResult(null);
 
-    const res = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are an expert agricultural market analyst. Predict the market price for the following crop with realistic, current market-based estimates for India.
-
-Crop: ${crop}
-Market Type: ${market}
-Season: ${season}
-Quantity (if specified): ${quantity || 'Not specified'} quintals
-
-Provide:
-1. Current estimated price per quintal (in INR)
-2. Predicted price 1 month from now
-3. Predicted price 3 months from now
-4. Predicted price 6 months from now
-5. Price trend (up/down/stable)
-6. Price trend percentage change (1 month)
-7. Min price (floor)
-8. Max price (ceiling)
-9. Market factors affecting price (3-4 bullet points)
-10. Best time to sell recommendation
-11. 6-month monthly price forecast data (month name and price)
-12. Total estimated revenue if quantity is specified (else null)
-
-Use realistic current Indian market prices. Base current price on actual commodity prices.`,
-      add_context_from_internet: true,
-      response_json_schema: {
-        type: 'object',
-        properties: {
-          current_price: { type: 'number' },
-          price_1_month: { type: 'number' },
-          price_3_months: { type: 'number' },
-          price_6_months: { type: 'number' },
-          trend: { type: 'string' },
-          trend_percent: { type: 'number' },
-          min_price: { type: 'number' },
-          max_price: { type: 'number' },
-          market_factors: { type: 'array', items: { type: 'string' } },
-          best_sell_time: { type: 'string' },
-          monthly_forecast: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                month: { type: 'string' },
-                price: { type: 'number' },
-              },
-            },
-          },
-          total_revenue: { type: 'number' },
-        },
-      },
-    });
+    const res = await agroApi.pricePredictions.create({ crop, market, season, quantity });
 
     setResult(res);
     setIsLoading(false);

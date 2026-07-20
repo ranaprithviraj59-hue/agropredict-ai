@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { agroApi } from '@/api/agroApi';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageTransition from '@/components/shared/PageTransition';
 import FarmSelector from '@/components/predict/FarmSelector';
@@ -21,10 +21,10 @@ export default function Predict() {
 
   const { data: farms = [] } = useQuery({
     queryKey: ['farms'],
-    queryFn: () => base44.entities.Farm.list(),
+    queryFn: () => agroApi.farms.list(),
   });
 
-  const selectedFarm = farms.find((f) => f.id === selectedFarmId);
+  const selectedFarm = farms.find((f) => String(f.id) === String(selectedFarmId));
 
   const handlePredict = async () => {
     if (!selectedFarm || !season) {
@@ -35,66 +35,21 @@ export default function Predict() {
     setIsAnalyzing(true);
     setResults(null);
 
-    const prompt = `You are an expert agricultural AI advisor. Based on the following farm details, predict the best crops that can grow successfully.
-
-Farm Details:
-- Farm Name: ${selectedFarm.farm_name}
-- Location: ${selectedFarm.location || 'Not specified'}
-- Latitude: ${selectedFarm.latitude || 'Unknown'}
-- Longitude: ${selectedFarm.longitude || 'Unknown'}
-- Farm Size: ${selectedFarm.farm_size_acres || 'Unknown'} acres
-- Soil Type: ${selectedFarm.soil_type}
-- Water Source: ${selectedFarm.water_source}
-- Water Availability: ${selectedFarm.water_availability}
-- Climate Zone: ${selectedFarm.climate_zone || 'Not specified'}
-- Irrigation Type: ${selectedFarm.irrigation_type || 'Not specified'}
-- Soil pH: ${selectedFarm.soil_ph || 'Unknown'}
-- Organic Matter: ${selectedFarm.organic_matter_percent || 'Unknown'}%
-- Previous Crop: ${selectedFarm.previous_crop || 'None'}
-- Growing Season: ${season}
-
-Predict 6-8 crops that can grow on this farm. For each crop provide realistic success probability (percentage), expected yield quality, growth duration in days, water requirement level, investment level, market demand level, and practical tips. Order by success probability descending.`;
-
-    const response = await base44.integrations.Core.InvokeLLM({
-      prompt,
-      response_json_schema: {
-        type: 'object',
-        properties: {
-          predictions: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                crop_name: { type: 'string' },
-                success_probability: { type: 'number' },
-                expected_yield: { type: 'string' },
-                growth_duration_days: { type: 'number' },
-                water_requirement: { type: 'string' },
-                investment_level: { type: 'string' },
-                market_demand: { type: 'string' },
-                tips: { type: 'string' },
-              },
-            },
-          },
-          recommendation_notes: { type: 'string' },
-        },
-      },
+    const response = await agroApi.cropPredictions.create({
+      farm_id: selectedFarm.id,
+      season,
     });
 
     setResults(response);
     setIsAnalyzing(false);
+    queryClient.invalidateQueries({ queryKey: ['predictions'] });
+    toast.success('Prediction created and saved to history');
   };
 
   const savePrediction = async () => {
     if (!results) return;
-    await base44.entities.CropPrediction.create({
-      farm_id: selectedFarmId,
-      season,
-      predictions: results.predictions,
-      recommendation_notes: results.recommendation_notes,
-    });
     queryClient.invalidateQueries({ queryKey: ['predictions'] });
-    toast.success('Prediction saved successfully!');
+    toast.success('Prediction is already saved in history');
   };
 
   return (

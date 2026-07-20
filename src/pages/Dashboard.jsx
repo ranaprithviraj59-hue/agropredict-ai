@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { agroApi } from '@/api/agroApi';
 import { useQuery } from '@tanstack/react-query';
 import PageTransition from '@/components/shared/PageTransition';
 import WelcomeHero from '@/components/dashboard/WelcomeHero';
@@ -10,17 +10,17 @@ export default function Dashboard() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
+    agroApi.me().then(setUser).catch(() => {});
   }, []);
 
   const { data: farms = [] } = useQuery({
     queryKey: ['farms'],
-    queryFn: () => base44.entities.Farm.list(),
+    queryFn: () => agroApi.farms.list(),
   });
 
   const { data: predictions = [] } = useQuery({
     queryKey: ['predictions'],
-    queryFn: () => base44.entities.CropPrediction.list('-created_date', 10),
+    queryFn: () => agroApi.cropPredictions.list(),
   });
 
   const topCrop = predictions[0]?.predictions?.[0]?.crop_name;

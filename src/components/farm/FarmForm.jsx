@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { agroApi } from '@/api/agroApi';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { MapPin, Save, X, Navigation } from 'lucide-react';
+import { Save, X, Navigation, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 const SOIL_TYPES = ['clay', 'sandy', 'loamy', 'silty', 'peaty', 'chalky', 'laterite', 'black_cotton', 'red_soil', 'alluvial'];
@@ -18,6 +20,10 @@ export default function FarmForm({ farm, onSubmit, onCancel, isLoading }) {
   const [form, setForm] = useState({
     farm_name: '',
     location: '',
+    state: '',
+    district: '',
+    city: '',
+    region: '',
     latitude: null,
     longitude: null,
     farm_size_acres: '',
@@ -37,6 +43,10 @@ export default function FarmForm({ farm, onSubmit, onCancel, isLoading }) {
       setForm({
         farm_name: farm.farm_name || '',
         location: farm.location || '',
+        state: farm.state || '',
+        district: farm.district || '',
+        city: farm.city || '',
+        region: farm.region || '',
         latitude: farm.latitude || null,
         longitude: farm.longitude || null,
         farm_size_acres: farm.farm_size_acres || '',
@@ -53,6 +63,67 @@ export default function FarmForm({ farm, onSubmit, onCancel, isLoading }) {
     }
   }, [farm]);
 
+  const { data: locationKnowledge } = useQuery({
+    queryKey: ['location-knowledge'],
+    queryFn: () => agroApi.locationKnowledge(),
+  });
+
+  const stateProfile = form.state ? locationKnowledge?.stateProfiles?.[form.state] : null;
+  const districtProfile = form.state && form.district
+    ? locationKnowledge?.districtProfiles?.[form.state]?.[form.district]
+    : null;
+  const activeProfile = districtProfile || stateProfile;
+  const districts = stateProfile?.districts || [];
+  const cities = districtProfile?.cities || [];
+
+  const applyLocationSuggestion = (profile, next = {}) => {
+    if (!profile) return;
+    setForm((f) => {
+      const city = next.city ?? f.city;
+      const district = next.district ?? f.district;
+      const state = next.state ?? f.state;
+      return {
+        ...f,
+        ...next,
+        region: profile.region || f.region,
+        climate_zone: profile.climate_zone || f.climate_zone,
+        soil_type: f.soil_type || profile.soil_types?.[0] || '',
+        water_source: f.water_source || profile.water_sources?.[0] || '',
+        water_availability: f.water_availability || profile.water_availability || '',
+        location: [city, district, state].filter(Boolean).join(', '),
+      };
+    });
+  };
+
+  const handleStateChange = (state) => {
+    const profile = locationKnowledge?.stateProfiles?.[state];
+    applyLocationSuggestion(profile, { state, district: '', city: '' });
+  };
+
+  const handleDistrictChange = (district) => {
+    const profile = locationKnowledge?.districtProfiles?.[form.state]?.[district] || stateProfile;
+    applyLocationSuggestion(profile, { district, city: '' });
+  };
+
+  const handleCityChange = (city) => {
+    applyLocationSuggestion(activeProfile, { city });
+  };
+
+  const inferFromCoordinates = (latitude, longitude) => {
+    const nearest = locationKnowledge?.coordinateProfiles
+      ?.map((profile) => ({
+        ...profile,
+        distance: (Number(latitude) - Number(profile.latitude)) ** 2 + (Number(longitude) - Number(profile.longitude)) ** 2,
+      }))
+      .sort((a, b) => a.distance - b.distance)[0];
+
+    if (!nearest) return null;
+
+    const profile = locationKnowledge?.districtProfiles?.[nearest.state]?.[nearest.district]
+      || locationKnowledge?.stateProfiles?.[nearest.state];
+    return { nearest, profile };
+  };
+
   const detectLocation = () => {
     if (!navigator.geolocation) {
       toast.error('Geolocation is not supported by your browser');
@@ -60,15 +131,37 @@ export default function FarmForm({ farm, onSubmit, onCancel, isLoading }) {
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        const latitude = pos.coords.latitude;
+        const longitude = pos.coords.longitude;
+        const inferred = inferFromCoordinates(latitude, longitude);
+
+        if (inferred?.profile) {
+          applyLocationSuggestion(inferred.profile, {
+            state: inferred.nearest.state,
+            district: inferred.nearest.district,
+            city: inferred.nearest.district,
+            latitude,
+            longitude,
+          });
+          toast.success(`Location detected near ${inferred.nearest.district}, ${inferred.nearest.state}`);
+          return;
+        }
+
         setForm((f) => ({
           ...f,
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-          location: `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`,
+          latitude,
+          longitude,
+          location: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
         }));
-        toast.success('Location detected!');
+        toast.success('Coordinates detected. Select state/district for soil suggestions.');
       },
-      () => toast.error('Unable to detect location')
+      (error) => {
+        const message = error.code === 1
+          ? 'Location permission denied. Allow location access in browser settings or enter state/district manually.'
+          : 'Unable to detect location. Enter state/district manually.';
+        toast.error(message);
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
     );
   };
 
@@ -109,9 +202,73 @@ export default function FarmForm({ farm, onSubmit, onCancel, isLoading }) {
           </div>
 
           <div className="space-y-2">
+            <Label>State / Union Territory</Label>
+            <Select value={form.state} onValueChange={handleStateChange}>
+              <SelectTrigger><SelectValue placeholder="Select state..." /></SelectTrigger>
+              <SelectContent>
+                {locationKnowledge?.states?.map((state) => (
+                  <SelectItem key={state} value={state}>{state}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>District</Label>
+            <Select value={form.district} onValueChange={handleDistrictChange} disabled={!form.state || districts.length === 0}>
+              <SelectTrigger><SelectValue placeholder={districts.length ? 'Select district...' : 'Use custom location'} /></SelectTrigger>
+              <SelectContent>
+                {districts.map((district) => (
+                  <SelectItem key={district} value={district}>{district}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>City / Village</Label>
+            <div className="flex gap-2">
+              <Input
+                value={form.city}
+                onChange={(e) => handleCityChange(e.target.value)}
+                placeholder={cities.length ? `e.g. ${cities.slice(0, 2).join(', ')}` : 'Enter village or city'}
+                list="city-suggestions"
+                className="flex-1"
+              />
+              <datalist id="city-suggestions">
+                {cities.map((city) => <option key={city} value={city} />)}
+              </datalist>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Agro Region</Label>
+            <Input value={form.region} onChange={(e) => update('region', e.target.value)} placeholder="Auto suggested region" />
+          </div>
+
+          <div className="space-y-2">
             <Label>Farm Size (acres)</Label>
             <Input type="number" value={form.farm_size_acres} onChange={(e) => update('farm_size_acres', e.target.value)} placeholder="10" />
           </div>
+
+          {activeProfile && (
+            <div className="md:col-span-2 rounded-xl border border-primary/20 bg-primary/5 p-4">
+              <div className="flex items-start gap-3">
+                <Sparkles className="w-5 h-5 text-primary mt-0.5" />
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-foreground">Auto suggestion for this region</p>
+                  <p className="text-xs text-muted-foreground">
+                    Common soils: {activeProfile.soil_types?.map((s) => s.replace(/_/g, ' ')).join(', ')}.
+                    {' '}Climate: {activeProfile.climate_zone?.replace(/_/g, ' ')}.
+                    {' '}Water: {activeProfile.water_availability}.
+                  </p>
+                  <Button type="button" variant="outline" size="sm" onClick={() => applyLocationSuggestion(activeProfile)}>
+                    Apply Suggested Soil, Climate and Water
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label>Soil Type *</Label>
